@@ -1,0 +1,14 @@
+[package]
+name = "mapeditor"
+version = "0.1.0"
+authors = ["Kornelijus Survila <kornholijo@gmail.com>"]
+
+[[bin]]
+name = "mapeditor"
+path = "src/main.rs"
+
+[dependencies]
+byteorder = "*"
+clock_ticks = "0.0.5"
+glium = "*"
+image = "*"
