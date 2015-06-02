@@ -3,6 +3,7 @@ name = "mapeditor"
 version = "0.1.0"
 dependencies = [
  "byteorder 0.3.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cgmath 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clock_ticks 0.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "glium 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.3.10 (registry+https://github.com/rust-lang/crates.io-index)",
