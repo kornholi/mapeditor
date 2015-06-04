@@ -1,6 +1,9 @@
 use std::io;
 use byteorder::{ReadBytesExt, LittleEndian, Result};
 
+use encoding::{Encoding, DecoderTrap};
+use encoding::all::WINDOWS_1252;
+
 pub trait ReadExt: io::Read {
     fn read_byte(&mut self) -> Result<u8> {
         ReadBytesExt::read_u8(self)
@@ -24,6 +27,16 @@ pub trait ReadExt: io::Read {
 
     fn read_f32(&mut self) -> Result<f32> {
         ReadBytesExt::read_f32::<LittleEndian>(self)
+    }
+
+    fn read_string(&mut self) -> Result<String> {
+        let length = try!(self.read_u16()) as usize;
+        let mut data = Vec::with_capacity(length);
+        unsafe { data.set_len(length); }
+        self.read(&mut data[..]);
+
+        // FIXME: error handling
+        Ok(WINDOWS_1252.decode(&data[..], DecoderTrap::Strict).unwrap())
     }
 }
 
