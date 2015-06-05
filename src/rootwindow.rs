@@ -84,8 +84,8 @@ impl RootWindow {
 	}
 
 	fn loop_callback(&mut self) -> Action {
-		// building the uniforms
 		{
+			// building the uniforms
 	        let uniforms = uniform! {
 	            matrix: *self.ortho_matrix.as_fixed(),
 	            tex: self.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
@@ -112,9 +112,6 @@ impl RootWindow {
 
             match event {
                 glutin::Event::Closed => return Action::Stop,
-                //a @ glutin::Event::MouseMoved(_) => {
-                    //println!("{:?}", a);
-                //}
 
                 glutin::Event::Resized(w, h) => {
                 	self.resize(w, h)

@@ -136,7 +136,7 @@ impl Thing {
 
 		let mut sprite_ids = Vec::with_capacity(sprite_count as usize);
 
-		for i in (0..sprite_count) {
+		for i in 0..sprite_count {
 			let id = try!(r.read_u32());
 			sprite_ids.push(id);
 		}

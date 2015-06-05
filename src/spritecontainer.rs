@@ -21,7 +21,7 @@ impl SpriteContainer {
 
         let mut offsets = Vec::with_capacity(num_sprites as usize);
 
-        for _ in (0..num_sprites) {
+        for _ in 0..num_sprites {
             offsets.push(try!(r.read_u32())); 
         }
 
@@ -52,7 +52,7 @@ impl SpriteContainer {
 
             p += 4 * transparent_pixels as usize;
 
-            for _ in (0..pixels) {
+            for _ in 0..pixels {
                 try!(f.read(&mut raw_data[p..p+3]));
                 raw_data[p+3] = 255; // alpha channel
 
