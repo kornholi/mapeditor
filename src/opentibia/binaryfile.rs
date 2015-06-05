@@ -49,3 +49,39 @@ impl Node {
 		})
 	}
 }
+
+pub fn streaming_parser<F>(r: &mut io::Read, skip_start: bool, callback: F) -> io::Result<()>
+	where F: Fn(u8, &[u8]) -> io::Result<bool> {
+
+	if !skip_start {
+		let data = try!(r.read_byte());
+
+		if data != NODE_START {
+			let invalid_data_error: io::Error = io::Error::new(io::ErrorKind::Other, "unexpected data");
+			return Err(invalid_data_error)
+		}
+	}
+
+	let mut kind = try!(r.read_byte());
+	let mut data = Vec::new();
+
+	loop {
+		let b = try!(r.read_byte());
+
+		match b {
+			NODE_START => {
+				if !try!(callback(kind, &data[..])) {
+					return Ok(())
+				}
+				
+				kind = try!(r.read_byte());
+				data.clear();
+			},
+			NODE_END => (),
+			NODE_ESCAPE	=> data.push(try!(r.read_byte())),
+			_ => data.push(b)
+		}
+	}
+
+	Ok(())
+}

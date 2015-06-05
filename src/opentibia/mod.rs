@@ -3,6 +3,7 @@ use std::fmt;
 use helpers::ReadExt;
 
 pub mod binaryfile;
+pub mod map;
 
 #[derive(Debug)]
 pub struct Position {

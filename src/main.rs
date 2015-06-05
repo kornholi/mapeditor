@@ -24,21 +24,22 @@ use spritecontainer::SpriteContainer;
 use rootwindow::RootWindow;
 
 use opentibia::binaryfile::Node;
+use opentibia::map;
 use helpers::ReadExt;
 
 fn main() {
     println!("hi!");
 
     let mut f = File::open(r"o:\#\Tibia\Tibia1072\Tibia.spr").unwrap();
-    let mut data = &mut f;
+    let mut data = std::io::BufReader::new(&mut f);
 
-    let spr = SpriteContainer::new(data).unwrap();
-    let sprite = spr.get_sprite(data, 200).unwrap();
+    let spr = SpriteContainer::new(&mut data).unwrap();
+    let sprite = spr.get_sprite(&mut data, 200).unwrap();
 
     let mut f = File::open(r"o:\#\Tibia\Tibia1072\Tibia.dat").unwrap();
-    let mut data = &mut f;
+    let mut data = std::io::BufReader::new(&mut f);
    
-    let spr = DatContainer::new(data).unwrap();
+    let spr = DatContainer::new(&mut data).unwrap();
     
     let mut f = File::open(r"o:\#\Tibia\sample_data\RealMap.otbm").unwrap();
     let mut data = std::io::BufReader::new(&mut f);
@@ -47,16 +48,29 @@ fn main() {
     println!("otbm ver {}", version);
 
     let start = clock_ticks::precise_time_ms();
-    let node = Node::deserialize(&mut data, false);
+    //let node = Node::deserialize(&mut data, false).unwrap();
+    //let node = opentibia::binaryfile::streaming_parser(&mut data, false,
+    //    |kind, data| {
+    //        println!("node {} with {}b", kind, data.len());
+    //    });
+
+    opentibia::binaryfile::streaming_parser(&mut data, false, map::streaming_debug);
+
     let end = clock_ticks::precise_time_ms();
 
     println!("otbm node load took {}ms", end - start);
 
     //println!("root {:?}", node);
+
+    //map::debug(&node, 0);
+
+    //let otbm = map::Container::load(&node);
+
+    //println!("otbm: {:?}", otbm);
     //let mut indent = 0;
 
-    let mut buf = String::new();
-    std::io::stdin().read_line(&mut buf);
+    //let mut buf = String::new();
+    //std::io::stdin().read_line(&mut buf);
 
     return ();
 
