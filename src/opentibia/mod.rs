@@ -5,7 +5,7 @@ use helpers::ReadExt;
 pub mod binaryfile;
 pub mod map;
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Position {
     pub x: u16,
     pub y: u16,
