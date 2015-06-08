@@ -70,13 +70,13 @@ enum NodeAttributeKind {
 }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Item {
     id: u16,
     attributes: Vec<ItemAttribute>
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum ItemAttribute {
     Count(u8),
     ActionId(u16),
