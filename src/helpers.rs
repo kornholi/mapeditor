@@ -31,6 +31,10 @@ pub trait ReadExt: io::Read {
 
     fn read_string(&mut self) -> Result<String> {
         let length = try!(self.read_u16()) as usize;
+        self.read_fixed_string(length)
+    }
+
+    fn read_fixed_string(&mut self, length: usize) -> Result<String> {
         let mut data = Vec::with_capacity(length);
         unsafe { data.set_len(length); }
         self.read(&mut data[..]);

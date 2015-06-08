@@ -4,6 +4,7 @@ use helpers::ReadExt;
 
 pub mod binaryfile;
 pub mod map;
+pub mod itemtypes;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Position {
