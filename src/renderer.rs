@@ -25,19 +25,19 @@ pub struct Renderer {
 
     pub atlas: SpriteAtlas,
     pub map: map::Map,
-	
-	pub vertices: Vec<Vertex>,
+    
+    pub vertices: Vec<Vertex>,
 }
 
 fn get_sprite_id(obj: &datcontainer::Thing, layer: u8, pattern_x: u16, pattern_y: u16, x: u8, y: u8) -> usize {
-	let animation_time = 0;
+    let animation_time = 0;
 
-	((((((animation_time % 4095) * obj.pattern_height as u16
-		+ pattern_y % obj.pattern_height as u16) * obj.pattern_width as u16
-		+ pattern_x % obj.pattern_width as u16) * obj.layers as u16
-		+ layer as u16) * obj.height as u16
-		+ y as u16) * obj.width as u16
-		+ x as u16) as usize % obj.sprite_ids.len()
+    ((((((animation_time % 4095) * obj.pattern_height as u16
+        + pattern_y % obj.pattern_height as u16) * obj.pattern_width as u16
+        + pattern_x % obj.pattern_width as u16) * obj.layers as u16
+        + layer as u16) * obj.height as u16
+        + y as u16) * obj.width as u16
+        + x as u16) as usize % obj.sprite_ids.len()
 }
 
 impl Renderer {
@@ -50,7 +50,7 @@ impl Renderer {
         self.render_sector(opentibia::Position { x: 95+32, y: 117+32, z: 7 });
 
         &self.vertices[..]
-	}
+    }
 
     fn render_sector(&mut self, pos: opentibia::Position) {
         let sec = self.map.get(pos).unwrap();

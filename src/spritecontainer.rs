@@ -15,7 +15,7 @@ pub type SpriteImage<'a> = image::ImageBuffer<image::Rgba<u8>, Vec<u8>>;
 //  autodetect u16/u32 based on signature
 
 fn srgb_to_linear(srgb: u8) -> u8 {
-   (((srgb as f32) / 255.).powf(2.2) * 255.) as u8
+    (((srgb as f32) / 255.).powf(2.2) * 255.) as u8
 }
 
 impl SpriteContainer {
@@ -40,7 +40,7 @@ impl SpriteContainer {
         try!(f.seek(io::SeekFrom::Start(self.offsets[idx as usize - 1] as u64)));
 
         let mut raw_data = Vec::with_capacity(32*32*4);
-        
+
         unsafe {
             ptr::write_bytes(raw_data.as_mut_ptr(), 0, 32*32*4);
             raw_data.set_len(32*32*4);

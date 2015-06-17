@@ -14,17 +14,17 @@ pub struct Position {
 }
 
 impl Position {
-	pub fn deserialize(r: &mut io::Read) -> io::Result<Position> {
-		Ok(Position {
-			x: try!(r.read_u16()),
-			y: try!(r.read_u16()),
-			z: try!(r.read_byte())
-		})
-	}
+    pub fn deserialize(r: &mut io::Read) -> io::Result<Position> {
+        Ok(Position {
+            x: try!(r.read_u16()),
+            y: try!(r.read_u16()),
+            z: try!(r.read_byte())
+        })
+    }
 }
 
-impl fmt::Display for Position	{
-	fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-		fmt.write_fmt(format_args!("{},{},{}", self.x, self.y, self.z))
-	}
+impl fmt::Display for Position  {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        fmt.write_fmt(format_args!("{},{},{}", self.x, self.y, self.z))
+    }
 }
