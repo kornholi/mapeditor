@@ -74,7 +74,7 @@ pub fn streaming_parser<F>(r: &mut io::Read, skip_start: bool, mut callback: F) 
             Err(Error::UnexpectedEOF) => {
                 // The last node is not yet processed at this point.
                 // We don't care about the result since this is at EOF.
-                callback(kind, &data[..]);
+                try!(callback(kind, &data[..]));
                 return Ok(())
             },
             Err(err) => return Err(convert::From::from(err))

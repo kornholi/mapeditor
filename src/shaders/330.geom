@@ -4,7 +4,7 @@ uniform mat4 matrix;
 layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
-uniform float texture_size = 1.0;
+uniform float texture_size = 1.0 / (2048./32.);
 
 in vec2 v_tex_coord[];
 in vec4 v_color[];

@@ -1,6 +1,5 @@
+use std::collections::VecMap;
 use std::io;
-use std::iter;
-
 use num::FromPrimitive;
 
 use helpers::ReadExt;
@@ -28,8 +27,8 @@ enum AttributeKind {
 	Decay,
 	SpriteHash,
 	MinimapColor,
-	ATTR_07,
-	ATTR_08,
+	Attr07,
+	Attr08,
 	Light,
 
 	Decay2, //deprecated
@@ -50,6 +49,13 @@ pub struct Container {
 	pub flags: u32,
 	pub version: (u32, u32, u32),
 	pub description: String,
+	pub items: VecMap<Item>
+}
+
+#[derive(Debug, Default)]
+pub struct Item {
+	pub server_id: u16,
+	pub client_id: Option<u16>
 }
 
 impl Container {
@@ -65,6 +71,7 @@ impl Container {
 		let attr = try!(data.read_byte());
 		if attr == 1 {
 			let datalen = try!(data.read_u16());
+			assert!(datalen == 140);
 
 			let major_version = try!(data.read_u32());
 			let minor_version = try!(data.read_u32());
@@ -81,16 +88,12 @@ impl Container {
 			container.description = desc;
 		}
 
-		let mut total = 0;
-		let mut highest = 0;
-
 		for ref item_node in root_node.children {
 			let mut data = &item_node.data[..];
 
-			let flags = try!(data.read_u32());
+			let _flags = try!(data.read_u32());
 
-			let mut has_sid = false;
-			let mut has_cid = false;
+			let mut item = Item { ..Default::default() };
 
 			while !data.is_empty() {
 				use self::AttributeKind::*;
@@ -99,33 +102,17 @@ impl Container {
 				let len = try!(data.read_u16());
 
 				match kind {
-					ServerId => {
-						let server_id = try!(data.read_u16());
-						has_sid = true;
+					ServerId => item.server_id = try!(data.read_u16()),
+					ClientId => item.client_id = Some(try!(data.read_u16())),
 
-						if server_id > highest {
-							highest = server_id;
-						}
-					}
-
-					ClientId => has_cid = true,
-
-					_ => {}
+					_ => data = &data[len as usize..]
 				}
 
-
-				//println!("{:?} {}", kind, len);
-				data = &data[len as usize..];
+				//println!("{:?} {}", kind, len);	
 			}
 
-			if !has_cid || !has_sid {
-				println!("WOW!!!! {} {}", has_sid, has_cid);
-			}
-
-			total+=1;
+			container.items.insert(item.server_id as usize, item);
 		}
-
-		println!("{} max {}", total, highest);
 
 		Ok(container)
 	}

@@ -1,6 +1,4 @@
 use std::io;
-use std::iter;
-
 use num::FromPrimitive;
 
 use helpers::ReadExt;
@@ -72,12 +70,12 @@ enum NodeAttributeKind {
 
 #[derive(Clone, Debug)]
 pub struct Item {
-    id: u16,
-    attributes: Vec<ItemAttribute>
+    pub id: u16,
+    pub attributes: Vec<ItemAttribute>
 }
 
 #[derive(Clone, Debug, PartialEq)]
-enum ItemAttribute {
+pub enum ItemAttribute {
     Count(u8),
     ActionId(u16),
     UniqueId(u16),
@@ -128,9 +126,9 @@ impl Loader {
     pub fn open(r: &mut io::Read) -> io::Result<Loader> {
         let mut loader = Loader { ..Default::default() };
 
-        binaryfile::streaming_parser(r, false, |kind, data| {
+        try!(binaryfile::streaming_parser(r, false, |kind, data| {
             loader.load_headers_callback(kind, data)
-        });
+        }));
         
         Ok(loader)
     }
@@ -211,7 +209,7 @@ impl Loader {
                 }
 
                 if kind == NodeKind::HouseTile {
-                    let house_id = try!(data.read_u32());
+                    let _house_id = try!(data.read_u32());
                 }
 
                 while !data.is_empty() {
@@ -221,7 +219,7 @@ impl Loader {
 
                     match attribute {
                         TileFlags => {
-                            let flags = try!(data.read_u32());
+                            let _flags = try!(data.read_u32());
                         }
 
                         Item => {
@@ -235,7 +233,7 @@ impl Loader {
             }
 
             NodeKind::Item => {
-                if let Some(pos) = self.current_tile {
+                if self.current_tile.is_some() {
                     let item_id = try!(data.read_u16());
 
                     let mut item = Item { id: item_id, attributes: Vec::new() };

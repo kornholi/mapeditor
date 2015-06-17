@@ -14,6 +14,10 @@ pub type SpriteImage<'a> = image::ImageBuffer<image::Rgba<u8>, Vec<u8>>;
 //  support for u16 num sprites
 //  autodetect u16/u32 based on signature
 
+fn srgb_to_linear(srgb: u8) -> u8 {
+   (((srgb as f32) / 255.).powf(2.2) * 255.) as u8
+}
+
 impl SpriteContainer {
     pub fn new(r: &mut io::Read) -> io::Result<SpriteContainer> {
         let signature = try!(r.read_u32());
@@ -32,8 +36,8 @@ impl SpriteContainer {
         })
     }
 
-    pub fn get_sprite<T: io::Read + io::Seek>(&self, f: &mut T, idx: u16) -> io::Result<SpriteImage> {
-        try!(f.seek(io::SeekFrom::Start(self.offsets[idx as usize] as u64)));
+    pub fn get_sprite<T: io::Read + io::Seek>(&self, f: &mut T, idx: u32) -> io::Result<SpriteImage> {
+        try!(f.seek(io::SeekFrom::Start(self.offsets[idx as usize - 1] as u64)));
 
         let mut raw_data = Vec::with_capacity(32*32*4);
         unsafe { raw_data.set_len(32*32*4); }
@@ -54,6 +58,13 @@ impl SpriteContainer {
 
             for _ in 0..pixels {
                 try!(f.read(&mut raw_data[p..p+3]));
+
+                // FIXME: manual sRGB to linear conversion until
+                // srgb texture writing support lands in glium
+                raw_data[p] = srgb_to_linear(raw_data[p]);
+                raw_data[p+1] = srgb_to_linear(raw_data[p+1]);
+                raw_data[p+2] = srgb_to_linear(raw_data[p+2]);
+
                 raw_data[p+3] = 255; // alpha channel
 
                 p += 4;

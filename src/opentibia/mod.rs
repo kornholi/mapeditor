@@ -6,7 +6,7 @@ pub mod binaryfile;
 pub mod map;
 pub mod itemtypes;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Position {
     pub x: u16,
     pub y: u16,

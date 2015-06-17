@@ -1,3 +1,5 @@
+#![feature(collections)]
+
 extern crate byteorder;
 extern crate cgmath;
 extern crate clock_ticks;
@@ -6,87 +8,122 @@ extern crate encoding;
 #[macro_use] extern crate glium;
 extern crate image;
 extern crate num;
+extern crate toml;
 
 mod helpers;
 mod rootwindow;
 mod datcontainer;
+mod spriteatlas;
 mod spritecontainer;
 mod opentibia;
+mod map;
 
+use std::io::Read;
 use std::fs::File;
-use std::path::Path;
 
 use glium::glutin;
 use glium::{DisplayBuild};
 
 use datcontainer::DatContainer;
 use spritecontainer::SpriteContainer;
-use rootwindow::RootWindow;
+use rootwindow::{Renderer, RootWindow};
 
-use opentibia::binaryfile::Node;
-use opentibia::map;
+use spriteatlas::SpriteAtlas;
+
+use opentibia::itemtypes;
 use helpers::ReadExt;
 
 fn main() {
-    println!("hi!");
+    let mut input = String::new();
 
-    let mut f = File::open(r"o:\#\Tibia\Tibia1072\Tibia.spr").unwrap();
-    let mut data = std::io::BufReader::new(&mut f);
+    File::open("conf.toml").and_then(|mut f| {
+        f.read_to_string(&mut input)
+    }).unwrap();
 
-    let spr = SpriteContainer::new(&mut data).unwrap();
-    let sprite = spr.get_sprite(&mut data, 200).unwrap();
+    let mut parser = toml::Parser::new(&input);
 
-    let mut f = File::open(r"o:\#\Tibia\Tibia1072\Tibia.dat").unwrap();
-    let mut data = std::io::BufReader::new(&mut f);
-   
-    let spr = DatContainer::new(&mut data).unwrap();
+    let conf = match parser.parse() {
+        Some(value) => value,
+        None => {
+            println!("conf parsing failed:");
+
+            for err in &parser.errors {
+                    let (loline, locol) = parser.to_linecol(err.lo);
+                    let (hiline, hicol) = parser.to_linecol(err.hi);
+                    println!("{}:{}-{}:{} error: {}",
+                             loline, locol, hiline, hicol, err.desc);
+            }
+
+            return
+        }
+    };
+
+    // spr
+    let mut spr_data = std::io::BufReader::new(File::open(conf["spr"].as_str().unwrap()).unwrap());
+    let spr = SpriteContainer::new(&mut spr_data).unwrap();
+
+    // dat
+    let mut data = std::io::BufReader::new(File::open(conf["dat"].as_str().unwrap()).unwrap());
+    let dat = DatContainer::new(&mut data).unwrap();
     
-    let mut f = File::open(r"o:\#\Tibia\sample_data\RealMap.otbm").unwrap();
-    let mut data = std::io::BufReader::new(&mut f);
+    // otb
+    let mut data = std::io::BufReader::new(File::open(conf["otb"].as_str().unwrap()).unwrap());
+    let _version = data.read_u32().unwrap();
+    let otb = itemtypes::Container::new(&mut data).unwrap();
 
-    let version = data.read_u32().unwrap();
-    println!("otbm ver {}", version);
+    // otbm
+    let mut data = std::io::BufReader::new(File::open(conf["map"].as_str().unwrap()).unwrap());
+    let _version = data.read_u32().unwrap();
 
-    let start = clock_ticks::precise_time_ms();
     //let node = Node::deserialize(&mut data, false).unwrap();
     //let node = opentibia::binaryfile::streaming_parser(&mut data, false,
     //    |kind, data| {
     //        println!("node {} with {}b", kind, data.len());
     //    });
 
-    opentibia::binaryfile::streaming_parser(&mut data, false, map::streaming_debug);
+    let start = clock_ticks::precise_time_ms();
+    let mut otbm_map = opentibia::map::Loader::open(&mut data).unwrap();
+    let mut map = map::Map::new();
+
+    let mut tiles = 0;
+
+    otbm_map.load(&mut data, |pos, items| {
+        tiles += 1;
+
+        let sec = map.get_or_create(pos);
+        sec.get_tile(pos).push_all(items);
+    }).unwrap();
 
     let end = clock_ticks::precise_time_ms();
 
     println!("otbm node load took {}ms", end - start);
-
-    //println!("root {:?}", node);
-
-    //map::debug(&node, 0);
-
-    //let otbm = map::Container::load(&node);
-
-    //println!("otbm: {:?}", otbm);
-    //let mut indent = 0;
+    println!("total {} tiles", tiles);
 
     //let mut buf = String::new();
     //std::io::stdin().read_line(&mut buf);
 
-    return ();
-
-    /*let display = glutin::WindowBuilder::new()
+    let display = glutin::WindowBuilder::new()
         .with_title(format!("Map Editor"))
-        .with_dimensions(800, 500)
-        .with_vsync()
+        .with_dimensions(1100, 1100)
+        //.with_vsync()
         .build_glium()
         .unwrap();
 
-    let texture = glium::texture::SrgbTexture2d::new(&display, sprite);
+    let rend = Renderer {
+        spr: spr,
+        spr_data: spr_data,
+        dat: dat,
+        otb: otb,
 
-    let mut root = RootWindow::new(display, texture);
+        atlas: SpriteAtlas::new(&display),
+        map: map,
+
+        vertices: Vec::new()
+        //..Default::default()
+    };
+
+    let mut root = RootWindow::new(display, rend);
     
-    root.resize(800, 500);
+    root.resize(1100, 1100);
     root.run();
-
-    println!("done");*/
 }
