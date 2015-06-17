@@ -10,13 +10,14 @@ extern crate image;
 extern crate num;
 extern crate toml;
 
-mod helpers;
-mod rootwindow;
 mod datcontainer;
+mod helpers;
+mod map;
+mod opentibia;
+mod renderer;
+mod rootwindow;
 mod spriteatlas;
 mod spritecontainer;
-mod opentibia;
-mod map;
 
 use std::io::Read;
 use std::fs::File;
@@ -26,7 +27,8 @@ use glium::{DisplayBuild};
 
 use datcontainer::DatContainer;
 use spritecontainer::SpriteContainer;
-use rootwindow::{Renderer, RootWindow};
+use renderer::Renderer;
+use rootwindow::RootWindow;
 
 use spriteatlas::SpriteAtlas;
 
