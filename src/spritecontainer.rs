@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, ptr};
 use image;
 use helpers::ReadExt;
 
@@ -40,7 +40,11 @@ impl SpriteContainer {
         try!(f.seek(io::SeekFrom::Start(self.offsets[idx as usize - 1] as u64)));
 
         let mut raw_data = Vec::with_capacity(32*32*4);
-        unsafe { raw_data.set_len(32*32*4); }
+        
+        unsafe {
+            ptr::write_bytes(raw_data.as_mut_ptr(), 0, 32*32*4);
+            raw_data.set_len(32*32*4);
+        }
 
         // RGB color key (typically magenta)
         try!(f.read_byte());
