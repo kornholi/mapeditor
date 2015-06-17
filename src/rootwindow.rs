@@ -134,13 +134,18 @@ impl RootWindow {
 	    };
 
 	    let vertex_buffer_len = {
-	    	let start = clock_ticks::precise_time_ms();
+			let start = clock_ticks::precise_time_ms();
 			let data = renderer.render();
 			let end = clock_ticks::precise_time_ms();
 
 			println!("writing {} vertices (took {}ms to build)", data.len(), end-start);
 
-			vertex_buffer.slice(0..data.len()).unwrap().write(data);	
+			let start = clock_ticks::precise_time_ms();
+			vertex_buffer.slice(0..data.len()).unwrap().write(data);
+			let end = clock_ticks::precise_time_ms();
+
+			println!("vbo upload took {}ms", end-start);
+
 			data.len()
 		};
 
@@ -186,29 +191,7 @@ impl RootWindow {
 	}
 
 	fn loop_callback(&mut self) -> Action {
-		{
-			// building the uniforms
-	        let uniforms = uniform! {
-	            matrix: *self.ortho_matrix.as_fixed(),
-	            tex: self.renderer.atlas.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
-	        };
-
-	        let draw_params = glium::DrawParameters {
-	            blending_function:
-	                Some(glium::BlendingFunction::Addition { 
-	                                        source: glium::LinearBlendingFactor::SourceAlpha,
-	                                        destination: glium::LinearBlendingFactor::OneMinusSourceAlpha }),
-	            .. Default::default()
-	        };
-
-	        // drawing a frame
-	        let mut target = self.display.draw();
-	        target.clear_color(0.5, 0.5, 0.5, 1.0);
-	        target.draw(self.vertex_buffer.slice(0..self.vertex_buffer_len).unwrap(), NoIndices(PrimitiveType::Points), &self.program, &uniforms, &draw_params).unwrap();
-	        target.finish();
-		}
-	       
-	    // polling and handling the events received by the window
+		// polling and handling the events received by the window
         while let Some(event) = self.display.poll_events().next() {
             //println!("ev: {:?}", event);
 
@@ -223,6 +206,26 @@ impl RootWindow {
             }
         }
 
+		// building the uniforms
+        let uniforms = uniform! {
+            matrix: *self.ortho_matrix.as_fixed(),
+            tex: self.renderer.atlas.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+        };
+
+        let draw_params = glium::DrawParameters {
+            blending_function:
+                Some(glium::BlendingFunction::Addition { 
+                                        source: glium::LinearBlendingFactor::SourceAlpha,
+                                        destination: glium::LinearBlendingFactor::OneMinusSourceAlpha }),
+            .. Default::default()
+        };
+
+        // drawing a frame
+        let mut target = self.display.draw();
+        target.clear_color(0.5, 0.5, 0.5, 1.0);
+        target.draw(self.vertex_buffer.slice(0..self.vertex_buffer_len).unwrap(), NoIndices(PrimitiveType::Points), &self.program, &uniforms, &draw_params).unwrap();
+        target.finish();
+		
         Action::Continue
 	}
 }
