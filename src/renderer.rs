@@ -1,11 +1,12 @@
-use std::{io, fs};
+use std::{cmp, io, fs};
 
 use datcontainer;
 use datcontainer::DatContainer;
 
 use spritecontainer::SpriteContainer;
+
 use opentibia;
-use opentibia::itemtypes;
+use opentibia::{itemtypes, Position};
 
 use super::map;
 use super::spriteatlas::SpriteAtlas;
@@ -27,6 +28,8 @@ pub struct Renderer {
     pub map: map::Map,
     
     pub vertices: Vec<Vertex>,
+    pub bounds: (u16, u16, u16, u16),
+    pub new_data: bool
 }
 
 fn get_sprite_id(obj: &datcontainer::Thing, layer: u8, pattern_x: u16, pattern_y: u16, x: u8, y: u8) -> usize {
@@ -41,15 +44,44 @@ fn get_sprite_id(obj: &datcontainer::Thing, layer: u8, pattern_x: u16, pattern_y
 }
 
 impl Renderer {
-    pub fn render(&mut self) -> &[Vertex] {
+    pub fn resize(&mut self, ul: (i32, i32), size: (u16, u16)) {
+        let (u, l) = ul;
+        let (u, l) = (u as u16, l as u16);
+        let (w, h) = size;
+
+        let br = ((u + w), (l + h));
+
+        let bnd = self.bounds;
+
+        if u < bnd.0 || l < bnd.1 || br.0 > bnd.2 || br.1 > bnd.3 {
+            println!("resize {:?} {:?} bnd {:?}", ul, size, bnd);
+        } else {
+            return
+        }
+
+        // FIXME FIXME FIXME FIXME
+
+        self.bounds = (u & !31, l & !31, ((u + 31) & !31) + (w+31) & !31, ((l+31) & !31) + (h + 31) & !31);
+
+        let mut sectors = Vec::new();
+
+        for x in (0..w+31).step_by(map::Sector::SIZE) {
+            for y in (0..h+31).step_by(map::Sector::SIZE) {
+                let sec = self.map.get(Position { x: u + x, y: l + y, z: 7});
+
+                if let Some(sec) = sec {
+                    sectors.push(sec.origin);
+                }
+            }
+        }
+
         self.vertices.clear();
 
-        self.render_sector(opentibia::Position { x: 95, y: 117, z: 7 });
-        self.render_sector(opentibia::Position { x: 95+32, y: 117, z: 7 });
-        self.render_sector(opentibia::Position { x: 95, y: 117+32, z: 7 });
-        self.render_sector(opentibia::Position { x: 95+32, y: 117+32, z: 7 });
+        for sec in sectors {
+            self.render_sector(sec);
+        }
 
-        &self.vertices[..]
+        self.new_data = true;
     }
 
     fn render_sector(&mut self, pos: opentibia::Position) {

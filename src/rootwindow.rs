@@ -9,7 +9,6 @@ use glium::Surface;
 use glium::glutin;
 use glium::index::{PrimitiveType, NoIndices};
 
-
 use super::renderer::{Renderer, Vertex};
 
 enum Action {
@@ -41,22 +40,6 @@ impl RootWindow {
             glium::VertexBuffer::empty(&display, 16384)
         };
 
-        let vertex_buffer_len = {
-            let start = clock_ticks::precise_time_ms();
-            let data = renderer.render();
-            let end = clock_ticks::precise_time_ms();
-
-            println!("writing {} vertices (took {}ms to build)", data.len(), end-start);
-
-            let start = clock_ticks::precise_time_ms();
-            vertex_buffer.slice(0..data.len()).unwrap().write(data);
-            let end = clock_ticks::precise_time_ms();
-
-            println!("vbo upload took {}ms", end-start);
-
-            data.len()
-        };
-
         /*{
             use image;
             use std;
@@ -83,7 +66,7 @@ impl RootWindow {
             program: program,
 
             vertex_buffer: vertex_buffer,
-            vertex_buffer_len: vertex_buffer_len,
+            vertex_buffer_len: 0,
             
             ortho_matrix: cgmath::Matrix4::zero(),
 
@@ -106,6 +89,16 @@ impl RootWindow {
         let ul = self.ul_offset;
 
         self.ortho_matrix = cgmath::ortho(ul.0, ul.0 + w, ul.1 + h, ul.1, -1.0, 1.0);
+
+        // FIXME FIXME FIXME FIXME
+
+        let (w, h) = (w / 32., h / 32.);
+        let (w, h) = (w.ceil() as u16, h.ceil() as u16);
+
+        let (u, l) = (ul.0 / 32., ul.1 / 32.);
+        let (u, l) = (u as i32, l as i32);
+
+        self.renderer.resize((u, l), (w, h));
     }
 
     pub fn run(&mut self) {
@@ -117,19 +110,19 @@ impl RootWindow {
         // polling and handling the events received by the window
         while let Some(event) = self.display.poll_events().next() {
             use glium::glutin::Event::*;
+            use glium::glutin::MouseButton;
             //println!("ev: {:?}", event);
 
             match event {
-                glutin::Event::Closed => return Action::Stop,
+                Closed => return Action::Stop,
 
-                glutin::Event::Resized(w, h) => {
+                Resized(w, h) => {
                     self.resize(w, h)
                 }
 
-                glutin::Event::MouseMoved((x, y)) => {
+                MouseMoved((x, y)) => {
                     if self.dragging {
                         if let Some((prev_x, prev_y)) = self.dragging_position {
-                            //println!("hey {} {}", prev_x - x, prev_y - y);
                             let offset = (prev_x - x, prev_y - y);
 
                             self.ul_offset.0 += offset.0 as f32;
@@ -142,22 +135,38 @@ impl RootWindow {
                     }
                 }
 
-                glutin::Event::MouseInput(state, button) => {
+                MouseInput(state, MouseButton::Middle) | MouseInput(state, MouseButton::Left) => {
                     use glium::glutin::ElementState::*;
-                    use glium::glutin::MouseButton::*;
-
-                    match (state, button) {
-                        (Pressed, Middle) => self.dragging = true,
-                        (Released, Middle) => {
+                    
+                    match state {
+                        Pressed => self.dragging = true,
+                        Released => {
                             self.dragging = false;
                             self.dragging_position = None;
-                        },
-                        _ => {}
+                        }
                     }
+                }
+
+                Focused(false) => {
+                    self.dragging = false;
+                    self.dragging_position = None;
                 }
 
                 _ => ()
             }
+        }
+
+        if self.renderer.new_data {
+            let data = &self.renderer.vertices[..];
+
+            let start = clock_ticks::precise_time_ms();
+            self.vertex_buffer.slice(0..data.len()).unwrap().write(data);
+            let end = clock_ticks::precise_time_ms();
+
+            println!("vbo upload took {}ms", end-start);
+
+            self.vertex_buffer_len = data.len();
+            self.renderer.new_data = false;
         }
 
         // building the uniforms

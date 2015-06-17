@@ -19,7 +19,13 @@ impl Map {
         Map { ..Default::default() }
     }
 
-    pub fn get(&mut self, pos: Position) -> Option<&mut Sector> {
+    pub fn get(&self, pos: Position) -> Option<&Sector> {
+        let sector_pos = Position { x: pos.x & !31, y: pos.y & !31, z: pos.z};
+
+        self.sectors.get(&sector_pos)
+    }
+
+    pub fn get_mut(&mut self, pos: Position) -> Option<&mut Sector> {
         let sector_pos = Position { x: pos.x & !31, y: pos.y & !31, z: pos.z};
 
         self.sectors.get_mut(&sector_pos)
@@ -34,15 +40,17 @@ impl Map {
         }
 
         self.sectors.get_mut(&sector_pos).expect("impossible")
-        //return &mut self.sectors[&sector_pos];
     }
 }
 
 impl Sector {
-    fn new(origin: Position) -> Sector {
-        let mut tiles = Vec::with_capacity(32*32);
+    pub const SIZE: u16 = 32;
+    const NUM_TILES: usize = (Sector::SIZE * Sector::SIZE) as usize;
 
-        for _ in 0..32*32 {
+    fn new(origin: Position) -> Sector {
+        let mut tiles = Vec::with_capacity(Sector::NUM_TILES);
+
+        for _ in 0..Sector::NUM_TILES {
             tiles.push(Vec::new());
         }
 
@@ -50,6 +58,6 @@ impl Sector {
     }
 
     pub fn get_tile(&mut self, pos: Position) -> &mut Vec<Item> {
-        &mut self.tiles[((pos.x % 32) * 32 + (pos.y % 32)) as usize]
+        &mut self.tiles[((pos.x % Sector::SIZE) * Sector::SIZE + (pos.y % Sector::SIZE)) as usize]
     }
 }

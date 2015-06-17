@@ -1,4 +1,4 @@
-#![feature(collections)]
+#![feature(associated_consts, collections, step_by)]
 
 extern crate byteorder;
 extern crate cgmath;
@@ -120,7 +120,9 @@ fn main() {
         atlas: SpriteAtlas::new(&display),
         map: map,
 
-        vertices: Vec::new()
+        vertices: Vec::new(),
+        bounds: (0,0,0,0),
+        new_data: false
         //..Default::default()
     };
 
