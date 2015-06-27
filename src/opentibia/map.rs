@@ -320,9 +320,14 @@ impl Loader {
                                 item.attributes.push(ItemAttribute::Attack(attack));
                             }                                
 
-                            ItemDefense | ItemExtraDefense => {
+                            ItemDefense => {
                                 let defense = try!(data.read_i32());
                                 item.attributes.push(ItemAttribute::Defense(defense));
+                            }
+
+                            ItemExtraDefense => {
+                                let defense = try!(data.read_i32());
+                                item.attributes.push(ItemAttribute::ExtraDefense(defense));
                             }
 
                             ItemArmor => {
@@ -342,7 +347,6 @@ impl Loader {
 
                             TeleportDestination => {
                                 let destination = try!(Position::deserialize(&mut data));
-
                                 item.attributes.push(ItemAttribute::TeleportDestination(destination));
                             }
 
