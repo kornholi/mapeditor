@@ -1,4 +1,4 @@
-#![feature(associated_consts, collections, step_by)]
+#![feature(associated_consts, step_by, vecmap, vec_push_all)]
 
 extern crate byteorder;
 extern crate cgmath;
