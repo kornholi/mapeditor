@@ -13,7 +13,7 @@ pub struct SpriteAtlas {
 
 impl SpriteAtlas {
     pub fn new<F: Facade>(display: &F) -> SpriteAtlas {
-        let texture = Texture2d::empty(display, 2048, 2048);
+        let texture = Texture2d::empty(display, 2048, 2048).expect("texture creation failed");
 
         SpriteAtlas {
             texture: texture,

@@ -6,7 +6,6 @@ use clock_ticks;
 use std::thread;
 
 use glium::Surface;
-use glium::glutin;
 use glium::index::{PrimitiveType, NoIndices};
 
 use super::renderer::{Renderer, Vertex};
@@ -33,11 +32,11 @@ pub struct RootWindow {
 }
 
 impl RootWindow {
-    pub fn new(display: glium::backend::glutin_backend::GlutinFacade, mut renderer: Renderer) -> RootWindow {
+    pub fn new(display: glium::backend::glutin_backend::GlutinFacade, renderer: Renderer) -> RootWindow {
         let vertex_buffer = {
             implement_vertex!(Vertex, position, color, tex_coord);
 
-            glium::VertexBuffer::empty(&display, 16384)
+            glium::VertexBuffer::empty(&display, 16384).expect("VBO creation failed")
         };
 
         /*{
@@ -187,7 +186,7 @@ impl RootWindow {
         let mut target = self.display.draw();
         target.clear_color(0.5, 0.5, 0.5, 1.0);
         target.draw(self.vertex_buffer.slice(0..self.vertex_buffer_len).unwrap(), NoIndices(PrimitiveType::Points), &self.program, &uniforms, &draw_params).unwrap();
-        target.finish();
+        target.finish().unwrap();
         
         Action::Continue
     }

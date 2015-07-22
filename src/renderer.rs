@@ -1,4 +1,4 @@
-use std::{cmp, io, fs};
+use std::{io, fs};
 
 use datcontainer;
 use datcontainer::DatContainer;
