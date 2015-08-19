@@ -1,4 +1,4 @@
-use std::collections::VecMap;
+use vec_map::VecMap;
 use std::io;
 use num::FromPrimitive;
 

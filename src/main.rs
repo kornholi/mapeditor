@@ -9,6 +9,7 @@ extern crate encoding;
 extern crate image;
 extern crate num;
 extern crate toml;
+extern crate vec_map;
 
 mod datcontainer;
 mod helpers;
