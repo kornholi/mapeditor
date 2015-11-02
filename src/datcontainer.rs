@@ -145,7 +145,7 @@ impl Thing {
             let _loop_count = try!(r.read_i32());
             let _start_phase = try!(r.read_byte());
 
-            for _ in (0..animation_length) {
+            for _ in 0..animation_length {
                 let _min = try!(r.read_u32());
                 let _max = try!(r.read_u32());
             }

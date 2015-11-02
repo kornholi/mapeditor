@@ -1,6 +1,6 @@
 use glium;
 use cgmath;
-use cgmath::FixedArray;
+use cgmath::Matrix;
 use clock_ticks;
 
 use std::thread;
@@ -168,17 +168,16 @@ impl RootWindow {
             self.renderer.new_data = false;
         }
 
+        let ortho_matrix: &[[f32; 4]; 4] = self.ortho_matrix.as_ref();
+
         // building the uniforms
         let uniforms = uniform! {
-            matrix: *self.ortho_matrix.as_fixed(),
+            matrix: *ortho_matrix,
             tex: self.renderer.atlas.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
         };
 
         let draw_params = glium::DrawParameters {
-            blending_function:
-                Some(glium::BlendingFunction::Addition { 
-                                        source: glium::LinearBlendingFactor::SourceAlpha,
-                                        destination: glium::LinearBlendingFactor::OneMinusSourceAlpha }),
+            blend: glium::Blend::alpha_blending(),
             .. Default::default()
         };
 
