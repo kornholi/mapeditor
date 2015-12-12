@@ -1,4 +1,4 @@
-#![feature(associated_consts, step_by, vec_push_all)]
+#![feature(associated_consts, step_by)]
 
 extern crate byteorder;
 extern crate cgmath;
@@ -94,7 +94,7 @@ fn main() {
         tiles += 1;
 
         let sec = map.get_or_create(pos);
-        sec.get_tile(pos).push_all(items);
+        sec.get_tile(pos).extend_from_slice(items);
     }).unwrap();
 
     let end = clock_ticks::precise_time_ms();

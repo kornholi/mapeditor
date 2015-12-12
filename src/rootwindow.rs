@@ -4,6 +4,7 @@ use cgmath::Matrix;
 use clock_ticks;
 
 use std::thread;
+use std::time::Duration;
 
 use glium::Surface;
 use glium::index::{PrimitiveType, NoIndices};
@@ -213,6 +214,6 @@ fn start_loop<F>(mut callback: F) where F: FnMut() -> Action {
             // if you have a game, update the state here
         }
 
-        thread::sleep_ms(((FIXED_TIME_STAMP - accumulator) / 1000000) as u32);
+        thread::sleep(Duration::from_millis(((FIXED_TIME_STAMP - accumulator) / 1000000)));
     }
 }
