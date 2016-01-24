@@ -1,5 +1,6 @@
 use std::{io, ptr};
-use image;
+use glium;
+
 use helpers::ReadExt;
 
 pub struct SpriteContainer {
@@ -8,7 +9,7 @@ pub struct SpriteContainer {
     pub offsets: Vec<u32>
 }
 
-pub type SpriteImage<'a> = image::ImageBuffer<image::Rgba<u8>, Vec<u8>>;
+pub type SpriteImage<'a> = glium::texture::RawImage2d<'a, u8>;
 
 // TODO:
 //  support for u16 num sprites
@@ -77,7 +78,7 @@ impl SpriteContainer {
             size -= 2 + 2 + pixels*3;
         }
 
-        let img = image::ImageBuffer::from_raw(32, 32, raw_data).expect("sprite creation");
+        let img = glium::texture::RawImage2d::from_raw_rgba_reversed(raw_data, (32,32));
         Ok(img)
     }
 }

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use glium;
-use image;
 
 use glium::backend::Facade;
 use glium::texture::Texture2d;
@@ -30,11 +29,10 @@ impl SpriteAtlas {
         }
     }
 
-    pub fn add(&mut self, id: u32, sprite: image::ImageBuffer<image::Rgba<u8>, Vec<u8>>) -> [f32; 2]
+    pub fn add<'a, T>(&mut self, id: u32, data: T) -> [f32; 2]
+        where T: glium::texture::Texture2dDataSource<'a>
     {
         assert!(self.sprites.len() < (2048*2048)/(32*32));
-
-        let data = glium::texture::RawImage2d::from_raw_rgba_reversed(sprite.into_raw(), (32, 32));
 
         let end_idx = self.sprites.len() + 1;
         

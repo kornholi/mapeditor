@@ -75,7 +75,6 @@ impl RootWindow {
 
             dragging: false,
             dragging_position: None
-            //..Default::default()
         }
     }
 
