@@ -1,5 +1,5 @@
-use std::io;
-use byteorder::{ReadBytesExt, LittleEndian, Result};
+use std::io::{self, Result};
+use byteorder::{ReadBytesExt, LittleEndian};
 
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1252;

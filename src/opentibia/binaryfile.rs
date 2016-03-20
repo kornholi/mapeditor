@@ -1,7 +1,6 @@
 use std::convert;
-use std::io;
+use std::io::{self, Error};
 
-use byteorder::Error;
 use helpers::ReadExt;
 
 const NODE_ESCAPE: u8 = 0xFD;
@@ -71,13 +70,13 @@ pub fn streaming_parser<F>(r: &mut io::Read, skip_start: bool, mut callback: F) 
     loop {
         let b = match r.read_byte() {
             Ok(b) => b,
-            Err(Error::UnexpectedEOF) => {
+            Err(ref a) if a.kind() == io::ErrorKind::UnexpectedEof => { 
                 // The last node is not yet processed at this point.
                 // We don't care about the result since this is at EOF.
                 try!(callback(kind, &data[..]));
                 return Ok(())
             },
-            Err(err) => return Err(convert::From::from(err))
+            Err(err) => return Err(err)
         };
 
         match b {
