@@ -1,11 +1,5 @@
-use std::convert;
-use std::io::{self, Error};
-
+use std::io;
 use helpers::ReadExt;
-
-const NODE_ESCAPE: u8 = 0xFD;
-const NODE_START: u8 = 0xFE;
-const NODE_END: u8 = 0xFF;
 
 #[derive(Debug)]
 pub struct Node {
@@ -15,11 +9,15 @@ pub struct Node {
 }
 
 impl Node {
+    const ESCAPE: u8 = 0xFD;
+    const START: u8 = 0xFE;
+    const END: u8 = 0xFF;
+
     pub fn deserialize(r: &mut io::Read, skip_start: bool) -> io::Result<Node> {
         if !skip_start {
             let data = try!(r.read_byte());
 
-            if data != NODE_START {
+            if data != Node::START {
                 let invalid_data_error: io::Error = io::Error::new(io::ErrorKind::Other, "unexpected data");
                 return Err(invalid_data_error)
             }
@@ -34,9 +32,9 @@ impl Node {
             let b = try!(r.read_byte());
 
             match b {
-                NODE_START => children.push(try!(Node::deserialize(r, true))),
-                NODE_END => break,
-                NODE_ESCAPE => data.push(try!(r.read_byte())),
+                Node::START => children.push(try!(Node::deserialize(r, true))),
+                Node::END => break,
+                Node::ESCAPE => data.push(try!(r.read_byte())),
                 _ => data.push(b)
             }
         }
@@ -58,7 +56,7 @@ pub fn streaming_parser<F>(r: &mut io::Read, skip_start: bool, mut callback: F) 
     if !skip_start {
         let data = try!(r.read_byte());
 
-        if data != NODE_START {
+        if data != Node::START {
             let invalid_data_error: io::Error = io::Error::new(io::ErrorKind::Other, "unexpected data");
             return Err(invalid_data_error)
         }
@@ -80,7 +78,7 @@ pub fn streaming_parser<F>(r: &mut io::Read, skip_start: bool, mut callback: F) 
         };
 
         match b {
-            NODE_START => {
+            Node::START => {
                 let callback_result = try!(callback(kind, &data[..]));
                 data.clear();
 
@@ -92,8 +90,8 @@ pub fn streaming_parser<F>(r: &mut io::Read, skip_start: bool, mut callback: F) 
                 kind = try!(r.read_byte());
             },
 
-            NODE_END => (),
-            NODE_ESCAPE => data.push(try!(r.read_byte())),
+            Node::END => (),
+            Node::ESCAPE => data.push(try!(r.read_byte())),
             _ => data.push(b)
         }
     }
