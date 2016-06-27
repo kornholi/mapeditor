@@ -1,6 +1,5 @@
 use glium;
-use cgmath;
-use cgmath::Matrix;
+use cgmath::{self, Zero};
 use clock_ticks;
 
 use std::thread;
@@ -119,7 +118,7 @@ impl RootWindow {
                     self.resize(w, h)
                 }
 
-                MouseMoved((x, y)) => {
+                MouseMoved(x, y) => {
                     if self.dragging {
                         if let Some((prev_x, prev_y)) = self.dragging_position {
                             let offset = (prev_x - x, prev_y - y);

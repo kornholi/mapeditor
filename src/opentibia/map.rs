@@ -194,7 +194,7 @@ impl Loader {
 
                 if let Some(origin) = self.current_tile_origin {
                     if let Some(old_pos) = self.current_tile {
-                        tile_callback(old_pos, &self.current_tile_items[..]);
+                        tile_callback(old_pos, &self.current_tile_items);
                         self.current_tile_items.clear();
                     }
 
