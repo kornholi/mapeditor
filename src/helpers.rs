@@ -35,12 +35,11 @@ pub trait ReadExt: io::Read {
     }
 
     fn read_fixed_string(&mut self, length: usize) -> Result<String> {
-        let mut data = Vec::with_capacity(length);
-        unsafe { data.set_len(length); }
-        try!(self.read(&mut data[..]));
+        let mut data = vec![0; length];
+        try!(self.read_exact(&mut data));
 
         // FIXME: error handling
-        Ok(WINDOWS_1252.decode(&data[..], DecoderTrap::Strict).unwrap())
+        Ok(WINDOWS_1252.decode(&data, DecoderTrap::Strict).unwrap())
     }
 }
 
