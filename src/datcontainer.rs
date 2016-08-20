@@ -7,7 +7,7 @@ pub struct DatContainer {
     pub signature: u32,
 
     // index 0 = item id 100
-    pub items: Vec<Thing>
+    pub items: Vec<Thing>,
 }
 
 enum_from_primitive! {
@@ -68,7 +68,7 @@ pub struct Thing {
     pub displacement: (u16, u16),
     pub elevation: u16,
 
-    pub sprite_ids: Vec<u32>
+    pub sprite_ids: Vec<u32>,
 }
 
 impl Thing {
@@ -79,7 +79,8 @@ impl Thing {
         loop {
             // TODO: return custom error
             let raw_attr = try!(r.read_byte());
-            let attr = Attribute::from_u8(raw_attr).expect(&format!("unknown attribute {}", raw_attr));
+            let attr = Attribute::from_u8(raw_attr)
+                .expect(&format!("unknown attribute {}", raw_attr));
 
             {
                 use self::Attribute::*;
@@ -89,7 +90,7 @@ impl Thing {
 
                     Ground | Writable | WritableOnce => {
                         let _speed = try!(r.read_u16());
-                    },
+                    }
 
                     Light => {
                         let _intensity = try!(r.read_u16());
@@ -151,9 +152,9 @@ impl Thing {
             }
         }
 
-        let sprite_count = width as u16 * height as u16 *
-            pattern_width as u16 * pattern_height as u16 * pattern_depth as u16 *
-            layers as u16 * animation_length as u16;
+        let sprite_count =
+            width as u16 * height as u16 * pattern_width as u16 * pattern_height as u16 *
+            pattern_depth as u16 * layers as u16 * animation_length as u16;
 
         let mut sprite_ids = Vec::with_capacity(sprite_count as usize);
 
@@ -174,7 +175,7 @@ impl Thing {
             displacement: displacement,
             elevation: elevation,
 
-            sprite_ids: sprite_ids
+            sprite_ids: sprite_ids,
         })
     }
 }
@@ -200,7 +201,7 @@ impl DatContainer {
 
         Ok(DatContainer {
             signature: signature,
-            items: items
+            items: items,
         })
     }
 }

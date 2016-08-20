@@ -3,9 +3,11 @@
 extern crate byteorder;
 extern crate cgmath;
 extern crate clock_ticks;
-#[macro_use] extern crate enum_primitive;
+#[macro_use]
+extern crate enum_primitive;
 extern crate encoding;
-#[macro_use] extern crate glium;
+#[macro_use]
+extern crate glium;
 extern crate image;
 extern crate num;
 extern crate toml;
@@ -24,7 +26,7 @@ use std::io::Read;
 use std::fs::File;
 
 use glium::glutin;
-use glium::{DisplayBuild};
+use glium::DisplayBuild;
 
 use datcontainer::DatContainer;
 use spritecontainer::SpriteContainer;
@@ -39,9 +41,9 @@ use helpers::ReadExt;
 fn main() {
     let mut input = String::new();
 
-    File::open("conf.toml").and_then(|mut f| {
-        f.read_to_string(&mut input)
-    }).unwrap();
+    File::open("conf.toml")
+        .and_then(|mut f| f.read_to_string(&mut input))
+        .unwrap();
 
     let mut parser = toml::Parser::new(&input);
 
@@ -51,13 +53,17 @@ fn main() {
             println!("conf parsing failed:");
 
             for err in &parser.errors {
-                    let (loline, locol) = parser.to_linecol(err.lo);
-                    let (hiline, hicol) = parser.to_linecol(err.hi);
-                    println!("{}:{}-{}:{} error: {}",
-                             loline, locol, hiline, hicol, err.desc);
+                let (loline, locol) = parser.to_linecol(err.lo);
+                let (hiline, hicol) = parser.to_linecol(err.hi);
+                println!("{}:{}-{}:{} error: {}",
+                         loline,
+                         locol,
+                         hiline,
+                         hicol,
+                         err.desc);
             }
 
-            return
+            return;
         }
     };
 
@@ -68,7 +74,7 @@ fn main() {
     // dat
     let mut data = std::io::BufReader::new(File::open(conf["dat"].as_str().unwrap()).unwrap());
     let dat = DatContainer::new(&mut data).unwrap();
-    
+
     // otb
     let mut data = std::io::BufReader::new(File::open(conf["otb"].as_str().unwrap()).unwrap());
     let _version = data.read_u32().unwrap();
@@ -78,8 +84,8 @@ fn main() {
     let mut data = std::io::BufReader::new(File::open(conf["map"].as_str().unwrap()).unwrap());
     let _version = data.read_u32().unwrap();
 
-    //let node = Node::deserialize(&mut data, false).unwrap();
-    //let node = opentibia::binaryfile::streaming_parser(&mut data, false,
+    // let node = Node::deserialize(&mut data, false).unwrap();
+    // let node = opentibia::binaryfile::streaming_parser(&mut data, false,
     //    |kind, data| {
     //        println!("node {} with {}b", kind, data.len());
     //    });
@@ -91,19 +97,20 @@ fn main() {
     let mut tiles = 0;
 
     otbm_map.load(&mut data, |pos, items| {
-        tiles += 1;
+            tiles += 1;
 
-        let sec = map.get_or_create(pos);
-        sec.get_tile(pos).extend_from_slice(items);
-    }).unwrap();
+            let sec = map.get_or_create(pos);
+            sec.get_tile(pos).extend_from_slice(items);
+        })
+        .unwrap();
 
     let end = clock_ticks::precise_time_ms();
 
-    println!("otbm node load took {}ms", end - start);
-    println!("total {} tiles", tiles);
+    println!("OTBM node load took {}ms", end - start);
+    println!("Total {} tiles", tiles);
 
-    //let mut buf = String::new();
-    //std::io::stdin().read_line(&mut buf);
+    // let mut buf = String::new();
+    // std::io::stdin().read_line(&mut buf);
 
     let display = glutin::WindowBuilder::new()
         .with_title(format!("Map Editor"))
@@ -122,13 +129,12 @@ fn main() {
         map: map,
 
         vertices: Vec::new(),
-        bounds: (0,0,0,0),
-        new_data: false
-        //..Default::default()
+        bounds: (0, 0, 0, 0),
+        new_data: false, // ..Default::default()
     };
 
     let mut root = RootWindow::new(display, rend);
-    
+
     root.resize(1100, 1100);
     root.run();
 }

@@ -5,13 +5,13 @@ use opentibia::map::Item;
 
 #[derive(Debug, Default)]
 pub struct Map {
-    sectors: HashMap<Position, Sector>
+    sectors: HashMap<Position, Sector>,
 }
 
 #[derive(Debug)]
 pub struct Sector {
     pub origin: Position,
-    pub tiles: Vec<Vec<Item>>
+    pub tiles: Vec<Vec<Item>>,
 }
 
 impl Map {
@@ -20,19 +20,31 @@ impl Map {
     }
 
     pub fn get(&self, pos: Position) -> Option<&Sector> {
-        let sector_pos = Position { x: pos.x & !31, y: pos.y & !31, z: pos.z};
+        let sector_pos = Position {
+            x: pos.x & !31,
+            y: pos.y & !31,
+            z: pos.z,
+        };
 
         self.sectors.get(&sector_pos)
     }
 
     pub fn get_mut(&mut self, pos: Position) -> Option<&mut Sector> {
-        let sector_pos = Position { x: pos.x & !31, y: pos.y & !31, z: pos.z};
+        let sector_pos = Position {
+            x: pos.x & !31,
+            y: pos.y & !31,
+            z: pos.z,
+        };
 
         self.sectors.get_mut(&sector_pos)
     }
 
     pub fn get_or_create(&mut self, pos: Position) -> &mut Sector {
-        let sector_pos = Position { x: pos.x & !31, y: pos.y & !31, z: pos.z};
+        let sector_pos = Position {
+            x: pos.x & !31,
+            y: pos.y & !31,
+            z: pos.z,
+        };
 
         if !self.sectors.contains_key(&sector_pos) {
             let sec = Sector::new(sector_pos);
@@ -54,7 +66,10 @@ impl Sector {
             tiles.push(Vec::new());
         }
 
-        Sector { origin: origin, tiles: tiles }
+        Sector {
+            origin: origin,
+            tiles: tiles,
+        }
     }
 
     pub fn get_tile(&mut self, pos: Position) -> &mut Vec<Item> {

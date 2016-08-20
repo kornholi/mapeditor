@@ -6,7 +6,7 @@ use helpers::ReadExt;
 pub struct SpriteContainer {
     pub signature: u32,
     pub num_sprites: u32,
-    pub offsets: Vec<u32>
+    pub offsets: Vec<u32>,
 }
 
 pub type SpriteImage<'a> = glium::texture::RawImage2d<'a, u8>;
@@ -27,24 +27,27 @@ impl SpriteContainer {
         let mut offsets = Vec::with_capacity(num_sprites as usize);
 
         for _ in 0..num_sprites {
-            offsets.push(try!(r.read_u32())); 
+            offsets.push(try!(r.read_u32()));
         }
 
         Ok(SpriteContainer {
             signature: signature,
             num_sprites: num_sprites,
-            offsets: offsets
+            offsets: offsets,
         })
     }
 
-    pub fn get_sprite<T: io::Read + io::Seek>(&self, f: &mut T, idx: u32) -> io::Result<SpriteImage> {
+    pub fn get_sprite<T: io::Read + io::Seek>(&self,
+                                              f: &mut T,
+                                              idx: u32)
+                                              -> io::Result<SpriteImage> {
         try!(f.seek(io::SeekFrom::Start(self.offsets[idx as usize - 1] as u64)));
 
-        let mut raw_data = Vec::with_capacity(32*32*4);
+        let mut raw_data = Vec::with_capacity(32 * 32 * 4);
 
         unsafe {
-            ptr::write_bytes(raw_data.as_mut_ptr(), 0, 32*32*4);
-            raw_data.set_len(32*32*4);
+            ptr::write_bytes(raw_data.as_mut_ptr(), 0, 32 * 32 * 4);
+            raw_data.set_len(32 * 32 * 4);
         }
 
         // RGB color key (typically magenta)
@@ -62,23 +65,23 @@ impl SpriteContainer {
             p += 4 * transparent_pixels as usize;
 
             for _ in 0..pixels {
-                try!(f.read(&mut raw_data[p..p+3]));
+                try!(f.read(&mut raw_data[p..p + 3]));
 
                 // FIXME: manual sRGB to linear conversion until
                 // srgb texture writing support lands in glium
                 raw_data[p] = srgb_to_linear(raw_data[p]);
-                raw_data[p+1] = srgb_to_linear(raw_data[p+1]);
-                raw_data[p+2] = srgb_to_linear(raw_data[p+2]);
+                raw_data[p + 1] = srgb_to_linear(raw_data[p + 1]);
+                raw_data[p + 2] = srgb_to_linear(raw_data[p + 2]);
 
-                raw_data[p+3] = 255; // alpha channel
+                raw_data[p + 3] = 255; // alpha channel
 
                 p += 4;
             }
 
-            size -= 2 + 2 + pixels*3;
+            size -= 2 + 2 + pixels * 3;
         }
 
-        let img = glium::texture::RawImage2d::from_raw_rgba_reversed(raw_data, (32,32));
+        let img = glium::texture::RawImage2d::from_raw_rgba_reversed(raw_data, (32, 32));
         Ok(img)
     }
 }

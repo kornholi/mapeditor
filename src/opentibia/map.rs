@@ -71,7 +71,7 @@ enum NodeAttributeKind {
 #[derive(Clone, Debug)]
 pub struct Item {
     pub id: u16,
-    pub attributes: Vec<ItemAttribute>
+    pub attributes: Vec<ItemAttribute>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -100,7 +100,7 @@ pub enum ItemAttribute {
     ExtraDefense(i32),
     Armor(i32),
     HitChance(u8),
-    ShootRange(u8)
+    ShootRange(u8),
 }
 
 #[derive(Debug, Default)]
@@ -119,26 +119,27 @@ pub struct Loader {
 
     current_tile_origin: Option<Position>,
     current_tile: Option<Position>,
-    current_tile_items: Vec<Item>
+    current_tile_items: Vec<Item>,
 }
 
 impl Loader {
-    pub fn open(r: &mut io::Read) -> io::Result<Loader> {
+    pub fn open<R>(r: R) -> io::Result<Loader>
+        where R: io::Read
+    {
         let mut loader = Loader { ..Default::default() };
 
-        try!(binaryfile::streaming_parser(r, false, |kind, data| {
-            loader.load_headers_callback(kind, data)
-        }));
-        
+        try!(binaryfile::streaming_parser(r,
+                                          false,
+                                          |kind, data| loader.load_headers_callback(kind, data)));
+
         Ok(loader)
     }
 
-    pub fn load<F>(&mut self, r: &mut io::Read, mut tile_callback: F) -> io::Result<()> 
+    pub fn load<F>(&mut self, r: &mut io::Read, mut tile_callback: F) -> io::Result<()>
         where F: FnMut(Position, &[Item])
     {
         binaryfile::streaming_parser(r, true, |kind, data| {
-            self.load_callback(kind, data,
-                |pos, items| tile_callback(pos, items))
+            self.load_callback(kind, data, |pos, items| tile_callback(pos, items))
         })
     }
 
@@ -152,31 +153,36 @@ impl Loader {
                 self.height = try!(data.read_u16());
                 self.items_version = (try!(data.read_u32()), try!(data.read_u32()));
 
-                return Ok(true)
+                Ok(true)
             }
 
             NodeKind::MapData => {
                 while !data.is_empty() {
                     use self::NodeAttributeKind::*;
                     let raw_attr = try!(data.read_byte());
-                    let attribute = NodeAttributeKind::from_u8(raw_attr).expect("unknown attribute");
+                    let attribute = NodeAttributeKind::from_u8(raw_attr)
+                        .expect("unknown attribute");
 
                     match attribute {
                         MapDescription => self.description.push(try!(data.read_string())),
                         HouseFile => self.house_file.push(try!(data.read_string())),
                         SpawnFile => self.spawn_file.push(try!(data.read_string())),
-                        _ => panic!("Unknown map attribute")
+                        _ => panic!("Unknown map attribute"),
                     }
                 }
 
-                return Ok(false)
+                Ok(false)
             }
 
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
-    fn load_callback<F>(&mut self, kind: u8, mut data: &[u8], mut tile_callback: F) -> io::Result<bool>
+    fn load_callback<F>(&mut self,
+                        kind: u8,
+                        mut data: &[u8],
+                        mut tile_callback: F)
+                        -> io::Result<bool>
         where F: FnMut(Position, &[Item])
     {
         let kind = NodeKind::from_u8(kind).expect("unknown map node kind");
@@ -184,10 +190,9 @@ impl Loader {
         match kind {
             NodeKind::TileArea => {
                 let origin = try!(Position::deserialize(&mut data));
-
                 self.current_tile_origin = Some(origin);
             }
-    
+
             NodeKind::Tile | NodeKind::HouseTile => {
                 let x_offset = try!(data.read_byte()) as u16;
                 let y_offset = try!(data.read_byte()) as u16;
@@ -201,9 +206,8 @@ impl Loader {
                     self.current_tile = Some(Position {
                         x: origin.x + x_offset,
                         y: origin.y + y_offset,
-                        z: origin.z
+                        z: origin.z,
                     });
-
                 } else {
                     panic!("Encountered Tile outside of a TileArea");
                 }
@@ -215,159 +219,167 @@ impl Loader {
                 while !data.is_empty() {
                     use self::NodeAttributeKind::*;
                     let raw_attr = try!(data.read_byte());
-                    let attribute = NodeAttributeKind::from_u8(raw_attr).expect("unknown attribute");
+                    let attr = NodeAttributeKind::from_u8(raw_attr)
+                        .expect("unknown attribute");
 
-                    match attribute {
+                    match attr {
                         TileFlags => {
                             let _flags = try!(data.read_u32());
                         }
 
                         Item => {
                             let item_id = try!(data.read_u16());
-                            self.current_tile_items.push(self::Item { id: item_id, attributes: Vec::new() });
+                            self.current_tile_items.push(self::Item {
+                                id: item_id,
+                                attributes: Vec::new(),
+                            });
                         }
 
-                        _ => panic!("Unknown tile attribute")
+                        _ => panic!("unexpected tile attribute {:?}", attr),
                     }
                 }
             }
 
             NodeKind::Item => {
-                if self.current_tile.is_some() {
-                    let item_id = try!(data.read_u16());
-
-                    let mut item = Item { id: item_id, attributes: Vec::new() };
-
-                    while !data.is_empty() {
-                        use self::NodeAttributeKind::*;
-
-                        let raw_attr = try!(data.read_byte());
-                        let attribute = NodeAttributeKind::from_u8(raw_attr).expect("unknown attribute");
-
-                        match attribute {
-                            ItemCount | RuneCharges => {
-                                let count = try!(data.read_byte());
-                                item.attributes.push(ItemAttribute::Count(count));
-                            }
-
-                            ItemCharges => {
-                                let charges = try!(data.read_u16());
-                                item.attributes.push(ItemAttribute::Charges(charges));
-                            }
-
-                            ItemText => {
-                                let text = try!(data.read_string());
-                                item.attributes.push(ItemAttribute::Text(text));
-                            }
-
-                            ItemActionId => {
-                                let action_id = try!(data.read_u16());
-                                item.attributes.push(ItemAttribute::ActionId(action_id));
-                            }
-
-                            ItemUniqueId => {
-                                let unique_id = try!(data.read_u16());
-                                item.attributes.push(ItemAttribute::UniqueId(unique_id));
-                            }
-
-                            ItemWrittenDate => {
-                                let date = try!(data.read_u32());
-                                item.attributes.push(ItemAttribute::WrittenDate(date));
-                            }
-
-                            ItemWrittenBy => {
-                                let author = try!(data.read_string());
-                                item.attributes.push(ItemAttribute::WrittenBy(author));
-                            }
-
-                            ItemDescription => {
-                                let description = try!(data.read_string());
-                                item.attributes.push(ItemAttribute::Description(description));
-                            }
-    
-                            ItemDuration => {
-                                let duration = try!(data.read_i32());
-                                item.attributes.push(ItemAttribute::Duration(duration));
-                            }
-
-                            ItemDecayingState => {
-                                let state = try!(data.read_byte());
-                                item.attributes.push(ItemAttribute::DecayingState(state));
-                            }
-
-                            ItemName => {
-                                let name = try!(data.read_string());
-                                item.attributes.push(ItemAttribute::Name(name));
-                            }
-
-                            ItemArticle => {
-                                let article = try!(data.read_string());
-                                item.attributes.push(ItemAttribute::Article(article));
-                            }
-
-                            ItemPluralName => {
-                                let plural_name = try!(data.read_string());
-                                item.attributes.push(ItemAttribute::PluralName(plural_name));
-                            }
-
-                            ItemWeight => {
-                                let weight = try!(data.read_u32());
-                                item.attributes.push(ItemAttribute::Weight(weight));
-                            }
-
-                            ItemAttack => {
-                                let attack = try!(data.read_i32());
-                                item.attributes.push(ItemAttribute::Attack(attack));
-                            }                                
-
-                            ItemDefense => {
-                                let defense = try!(data.read_i32());
-                                item.attributes.push(ItemAttribute::Defense(defense));
-                            }
-
-                            ItemExtraDefense => {
-                                let defense = try!(data.read_i32());
-                                item.attributes.push(ItemAttribute::ExtraDefense(defense));
-                            }
-
-                            ItemArmor => {
-                                let armor = try!(data.read_i32());
-                                item.attributes.push(ItemAttribute::Armor(armor));
-                            }
-
-                            ItemHitChance => {
-                                let hit_chance = try!(data.read_byte());
-                                item.attributes.push(ItemAttribute::HitChance(hit_chance));
-                            }
-
-                            ItemShootRange => {
-                                let shoot_range = try!(data.read_byte());
-                                item.attributes.push(ItemAttribute::ShootRange(shoot_range));
-                            }
-
-                            TeleportDestination => {
-                                let destination = try!(Position::deserialize(&mut data));
-                                item.attributes.push(ItemAttribute::TeleportDestination(destination));
-                            }
-
-                            HouseDoorId => {
-                                let door_id = try!(data.read_byte());
-                                item.attributes.push(ItemAttribute::HouseDoorId(door_id));
-                            }
-                            
-                            DepotId => {
-                                let depot_id = try!(data.read_u16());
-                                item.attributes.push(ItemAttribute::DepotId(depot_id));
-                            }
-
-                            _ => panic!("Unknown item attribute")
-                        }
-                    }
-
-                    self.current_tile_items.push(item);
-                } else {
+                if self.current_tile.is_none() {
                     panic!("Encountered Item outside of a Tile");
                 }
+
+                let item_id = try!(data.read_u16());
+
+                let mut item = Item {
+                    id: item_id,
+                    attributes: Vec::new(),
+                };
+
+                while !data.is_empty() {
+                    use self::NodeAttributeKind::*;
+
+                    let raw_attr = try!(data.read_byte());
+                    let attribute = NodeAttributeKind::from_u8(raw_attr)
+                        .expect("unknown attribute");
+
+                    match attribute {
+                        ItemCount | RuneCharges => {
+                            let count = try!(data.read_byte());
+                            item.attributes.push(ItemAttribute::Count(count));
+                        }
+
+                        ItemCharges => {
+                            let charges = try!(data.read_u16());
+                            item.attributes.push(ItemAttribute::Charges(charges));
+                        }
+
+                        ItemText => {
+                            let text = try!(data.read_string());
+                            item.attributes.push(ItemAttribute::Text(text));
+                        }
+
+                        ItemActionId => {
+                            let action_id = try!(data.read_u16());
+                            item.attributes.push(ItemAttribute::ActionId(action_id));
+                        }
+
+                        ItemUniqueId => {
+                            let unique_id = try!(data.read_u16());
+                            item.attributes.push(ItemAttribute::UniqueId(unique_id));
+                        }
+
+                        ItemWrittenDate => {
+                            let date = try!(data.read_u32());
+                            item.attributes.push(ItemAttribute::WrittenDate(date));
+                        }
+
+                        ItemWrittenBy => {
+                            let author = try!(data.read_string());
+                            item.attributes.push(ItemAttribute::WrittenBy(author));
+                        }
+
+                        ItemDescription => {
+                            let description = try!(data.read_string());
+                            item.attributes.push(ItemAttribute::Description(description));
+                        }
+
+                        ItemDuration => {
+                            let duration = try!(data.read_i32());
+                            item.attributes.push(ItemAttribute::Duration(duration));
+                        }
+
+                        ItemDecayingState => {
+                            let state = try!(data.read_byte());
+                            item.attributes.push(ItemAttribute::DecayingState(state));
+                        }
+
+                        ItemName => {
+                            let name = try!(data.read_string());
+                            item.attributes.push(ItemAttribute::Name(name));
+                        }
+
+                        ItemArticle => {
+                            let article = try!(data.read_string());
+                            item.attributes.push(ItemAttribute::Article(article));
+                        }
+
+                        ItemPluralName => {
+                            let plural_name = try!(data.read_string());
+                            item.attributes.push(ItemAttribute::PluralName(plural_name));
+                        }
+
+                        ItemWeight => {
+                            let weight = try!(data.read_u32());
+                            item.attributes.push(ItemAttribute::Weight(weight));
+                        }
+
+                        ItemAttack => {
+                            let attack = try!(data.read_i32());
+                            item.attributes.push(ItemAttribute::Attack(attack));
+                        }                                
+
+                        ItemDefense => {
+                            let defense = try!(data.read_i32());
+                            item.attributes.push(ItemAttribute::Defense(defense));
+                        }
+
+                        ItemExtraDefense => {
+                            let defense = try!(data.read_i32());
+                            item.attributes.push(ItemAttribute::ExtraDefense(defense));
+                        }
+
+                        ItemArmor => {
+                            let armor = try!(data.read_i32());
+                            item.attributes.push(ItemAttribute::Armor(armor));
+                        }
+
+                        ItemHitChance => {
+                            let hit_chance = try!(data.read_byte());
+                            item.attributes.push(ItemAttribute::HitChance(hit_chance));
+                        }
+
+                        ItemShootRange => {
+                            let shoot_range = try!(data.read_byte());
+                            item.attributes.push(ItemAttribute::ShootRange(shoot_range));
+                        }
+
+                        TeleportDestination => {
+                            let destination = try!(Position::deserialize(&mut data));
+                            item.attributes.push(ItemAttribute::TeleportDestination(destination));
+                        }
+
+                        HouseDoorId => {
+                            let door_id = try!(data.read_byte());
+                            item.attributes.push(ItemAttribute::HouseDoorId(door_id));
+                        }
+
+                        DepotId => {
+                            let depot_id = try!(data.read_u16());
+                            item.attributes.push(ItemAttribute::DepotId(depot_id));
+                        }
+
+                        _ => panic!("Unknown item attribute"),
+                    }
+                }
+
+                self.current_tile_items.push(item);
             }
 
             NodeKind::Town => {
@@ -380,7 +392,7 @@ impl Loader {
                 self.waypoints.push(wp);
             }
 
-            _ => {}
+            _ => println!("ignoring node {:?}", kind),
         }
 
         Ok(true)
@@ -391,29 +403,40 @@ impl Loader {
 pub struct Town {
     pub id: u32,
     pub name: String,
-    pub temple_position: Position
+    pub temple_position: Position,
 }
 
 impl Town {
-    pub fn deserialize(r: &mut io::Read) -> io::Result<Town> {
+    pub fn deserialize<R>(mut r: R) -> io::Result<Town>
+        where R: io::Read
+    {
         let id = try!(r.read_u32());
         let name = try!(r.read_string());
         let pos = try!(Position::deserialize(r));
 
-        Ok(Town { id: id, name: name, temple_position: pos })
+        Ok(Town {
+            id: id,
+            name: name,
+            temple_position: pos,
+        })
     }
 }
 
 #[derive(Debug)]
 pub struct Waypoint {
     pub name: String,
-    pub position: Position
+    pub position: Position,
 }
 
 impl Waypoint {
-    pub fn deserialize(r: &mut io::Read) -> io::Result<Waypoint> {
+    pub fn deserialize<R>(mut r: R) -> io::Result<Waypoint>
+        where R: io::Read
+    {
         let name = try!(r.read_string());
         let pos = try!(Position::deserialize(r));
-        Ok(Waypoint { name: name, position: pos })
+        Ok(Waypoint {
+            name: name,
+            position: pos,
+        })
     }
 }

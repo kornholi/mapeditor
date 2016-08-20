@@ -28,35 +28,38 @@ pub struct RootWindow {
     ul_offset: (f32, f32),
 
     dragging: bool,
-    dragging_position: Option<(i32, i32)>
+    dragging_position: Option<(i32, i32)>,
 }
 
 impl RootWindow {
-    pub fn new(display: glium::backend::glutin_backend::GlutinFacade, renderer: Renderer) -> RootWindow {
+    pub fn new(display: glium::backend::glutin_backend::GlutinFacade,
+               renderer: Renderer)
+               -> RootWindow {
         let vertex_buffer = {
             implement_vertex!(Vertex, position, color, tex_coord);
 
             glium::VertexBuffer::empty(&display, 16384).expect("VBO creation failed")
         };
 
-        /*{
-            use image;
-            use std;
-            use std::path::Path;
+        // {
+        // use image;
+        // use std;
+        // use std::path::Path;
+        //
+        // let image: image::DynamicImage = renderer.atlas.texture.read();
+        // let mut output = std::fs::File::create(&Path::new("atlas.png")).unwrap();
+        // image.save(&mut output, image::ImageFormat::PNG).unwrap();
+        // }
 
-            let image: image::DynamicImage = renderer.atlas.texture.read();
-            let mut output = std::fs::File::create(&Path::new("atlas.png")).unwrap();
-            image.save(&mut output, image::ImageFormat::PNG).unwrap();
-        }*/
-
-        // compiling shaders and linking them together
+        // Compiling shaders and linking them together
         let program = program!(&display,
             330 => {
                 vertex: include_str!("shaders/330.vert"),
                 geometry: include_str!("shaders/330.geom"),
                 fragment: include_str!("shaders/330.frag")
             },
-        ).unwrap();
+        )
+            .unwrap();
 
         RootWindow {
             display: display,
@@ -66,20 +69,20 @@ impl RootWindow {
 
             vertex_buffer: vertex_buffer,
             vertex_buffer_len: 0,
-            
+
             ortho_matrix: cgmath::Matrix4::zero(),
 
             dimensions: (0., 0.),
-            ul_offset: (80.*32., 110.*32.0),
+            ul_offset: (80. * 32., 110. * 32.0),
 
             dragging: false,
-            dragging_position: None
+            dragging_position: None,
         }
     }
 
     pub fn resize(&mut self, w: u32, h: u32) {
         self.dimensions = (w as f32, h as f32);
-        self.calculate_projection();        
+        self.calculate_projection();
     }
 
     fn calculate_projection(&mut self) {
@@ -101,7 +104,7 @@ impl RootWindow {
 
     pub fn run(&mut self) {
         // the main loop
-        start_loop(|| { self.loop_callback() });
+        start_loop(|| self.loop_callback());
     }
 
     fn loop_callback(&mut self) -> Action {
@@ -109,14 +112,12 @@ impl RootWindow {
         while let Some(event) = self.display.poll_events().next() {
             use glium::glutin::Event::*;
             use glium::glutin::MouseButton;
-            //println!("ev: {:?}", event);
+            // println!("ev: {:?}", event);
 
             match event {
                 Closed => return Action::Stop,
 
-                Resized(w, h) => {
-                    self.resize(w, h)
-                }
+                Resized(w, h) => self.resize(w, h),
 
                 MouseMoved(x, y) => {
                     if self.dragging {
@@ -133,9 +134,10 @@ impl RootWindow {
                     }
                 }
 
-                MouseInput(state, MouseButton::Middle) | MouseInput(state, MouseButton::Left) => {
+                MouseInput(state, MouseButton::Middle) |
+                MouseInput(state, MouseButton::Left) => {
                     use glium::glutin::ElementState::*;
-                    
+
                     match state {
                         Pressed => self.dragging = true,
                         Released => {
@@ -150,18 +152,18 @@ impl RootWindow {
                     self.dragging_position = None;
                 }
 
-                _ => ()
+                _ => (),
             }
         }
 
         if self.renderer.new_data {
-            let data = &self.renderer.vertices[..];
+            let data = &self.renderer.vertices;
 
             let start = clock_ticks::precise_time_ms();
             self.vertex_buffer.slice(0..data.len()).unwrap().write(data);
             let end = clock_ticks::precise_time_ms();
 
-            println!("vbo upload took {}ms", end-start);
+            println!("VBO upload took {}ms", end - start);
 
             self.vertex_buffer_len = data.len();
             self.renderer.new_data = false;
@@ -175,29 +177,34 @@ impl RootWindow {
             tex: self.renderer.atlas.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
         };
 
-        let draw_params = glium::DrawParameters {
-            blend: glium::Blend::alpha_blending(),
-            .. Default::default()
-        };
+        let draw_params =
+            glium::DrawParameters { blend: glium::Blend::alpha_blending(), ..Default::default() };
 
         // drawing a frame
         let mut target = self.display.draw();
         target.clear_color(0.5, 0.5, 0.5, 1.0);
-        target.draw(self.vertex_buffer.slice(0..self.vertex_buffer_len).unwrap(), NoIndices(PrimitiveType::Points), &self.program, &uniforms, &draw_params).unwrap();
+        target.draw(self.vertex_buffer.slice(0..self.vertex_buffer_len).unwrap(),
+                  NoIndices(PrimitiveType::Points),
+                  &self.program,
+                  &uniforms,
+                  &draw_params)
+            .unwrap();
         target.finish().unwrap();
-        
+
         Action::Continue
     }
 }
 
-fn start_loop<F>(mut callback: F) where F: FnMut() -> Action {
+fn start_loop<F>(mut callback: F)
+    where F: FnMut() -> Action
+{
     let mut accumulator = 0;
     let mut previous_clock = clock_ticks::precise_time_ns();
 
     loop {
         match callback() {
             Action::Stop => break,
-            Action::Continue => ()
+            Action::Continue => (),
         };
 
         let now = clock_ticks::precise_time_ns();

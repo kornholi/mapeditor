@@ -26,21 +26,26 @@ pub struct Renderer {
 
     pub atlas: SpriteAtlas,
     pub map: map::Map,
-    
+
     pub vertices: Vec<Vertex>,
     pub bounds: (u16, u16, u16, u16),
-    pub new_data: bool
+    pub new_data: bool,
 }
 
-fn get_sprite_id(obj: &datcontainer::Thing, layer: u8, pattern_x: u16, pattern_y: u16, x: u8, y: u8) -> usize {
+fn get_sprite_id(obj: &datcontainer::Thing,
+                 layer: u8,
+                 pattern_x: u16,
+                 pattern_y: u16,
+                 x: u8,
+                 y: u8)
+                 -> usize {
     let animation_time = 0;
 
-    ((((((animation_time % 4095) * obj.pattern_height as u16
-        + pattern_y % obj.pattern_height as u16) * obj.pattern_width as u16
-        + pattern_x % obj.pattern_width as u16) * obj.layers as u16
-        + layer as u16) * obj.height as u16
-        + y as u16) * obj.width as u16
-        + x as u16) as usize % obj.sprite_ids.len()
+    ((((((animation_time % 4095) * obj.pattern_height as u16 +
+         pattern_y % obj.pattern_height as u16) * obj.pattern_width as u16 +
+        pattern_x % obj.pattern_width as u16) * obj.layers as u16 +
+       layer as u16) * obj.height as u16 + y as u16) * obj.width as u16 + x as u16) as usize %
+    obj.sprite_ids.len()
 }
 
 impl Renderer {
@@ -56,18 +61,24 @@ impl Renderer {
         if u < bnd.0 || l < bnd.1 || br.0 > bnd.2 || br.1 > bnd.3 {
             println!("resize {:?} {:?} bnd {:?}", ul, size, bnd);
         } else {
-            return
+            return;
         }
 
         // FIXME FIXME FIXME FIXME
-
-        self.bounds = (u & !31, l & !31, ((u + 31) & !31) + (w+31) & !31, ((l+31) & !31) + (h + 31) & !31);
+        self.bounds = (u & !31,
+                       l & !31,
+                       ((u + 31) & !31) + (w + 31) & !31,
+                       ((l + 31) & !31) + (h + 31) & !31);
 
         let mut sectors = Vec::new();
 
-        for x in (0..w+31).step_by(map::Sector::SIZE) {
-            for y in (0..h+31).step_by(map::Sector::SIZE) {
-                let sec = self.map.get(Position { x: u + x, y: l + y, z: 7});
+        for x in (0..w + 31).step_by(map::Sector::SIZE) {
+            for y in (0..h + 31).step_by(map::Sector::SIZE) {
+                let sec = self.map.get(Position {
+                    x: u + x,
+                    y: l + y,
+                    z: 7,
+                });
 
                 if let Some(sec) = sec {
                     sectors.push(sec.origin);
@@ -81,7 +92,9 @@ impl Renderer {
             self.render_sector(sec);
         }
 
-        self.new_data = true;
+        if self.vertices.len() > 0 {
+            self.new_data = true;
+        }
     }
 
     fn render_sector(&mut self, pos: opentibia::Position) {
@@ -101,7 +114,7 @@ impl Renderer {
 
                 if let Some(client_id) = otb_entry.client_id {
                     let obj = &self.dat.items[(client_id - 100) as usize];
-                    //println!("dat: {:?}", obj);
+                    // println!("dat: {:?}", obj);
 
                     let pattern_x = tile_x as u16 % obj.pattern_width as u16;
                     let pattern_y = tile_y as u16 % obj.pattern_height as u16;
@@ -116,14 +129,22 @@ impl Renderer {
                                     let mut tex_pos = self.atlas.get(spr_id);
 
                                     if tex_pos == [0., 0.] {
-                                        let sprite = self.spr.get_sprite(&mut self.spr_data, spr_id).unwrap();
+                                        let sprite = self.spr
+                                            .get_sprite(&mut self.spr_data, spr_id)
+                                            .unwrap();
                                         tex_pos = self.atlas.add(spr_id, sprite);
                                     }
 
-                                    let obj_x = tile_x as f32 - x as f32 - (obj.displacement.0 + elevation) as f32 / 32.;
-                                    let obj_y = tile_y as f32 - y as f32 - (obj.displacement.1 + elevation) as f32 / 32.;
+                                    let obj_x = tile_x as f32 - x as f32 -
+                                                (obj.displacement.0 + elevation) as f32 / 32.;
+                                    let obj_y = tile_y as f32 - y as f32 -
+                                                (obj.displacement.1 + elevation) as f32 / 32.;
 
-                                    self.vertices.push(Vertex { position: [obj_x, obj_y, 7.], color: [1.0, 1.0, 1.0, 1.0], tex_coord: tex_pos });
+                                    self.vertices.push(Vertex {
+                                        position: [obj_x, obj_y, 7.],
+                                        color: [1.0, 1.0, 1.0, 1.0],
+                                        tex_coord: tex_pos,
+                                    });
                                 }
                             }
                         }
