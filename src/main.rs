@@ -91,9 +91,9 @@ fn main() {
     //    });
 
     let start = clock_ticks::precise_time_ms();
-    let mut otbm_map = opentibia::map::Loader::open(&mut data).unwrap();
     let mut map = map::Map::new();
 
+    let mut otbm_map = opentibia::map::Loader::open(&mut data).unwrap();
     let mut tiles = 0;
 
     otbm_map.load(&mut data, |pos, items| {
@@ -101,16 +101,11 @@ fn main() {
 
             let sec = map.get_or_create(pos);
             sec.get_tile(pos).extend_from_slice(items);
-        })
-        .unwrap();
+        }).unwrap();
 
     let end = clock_ticks::precise_time_ms();
 
-    println!("OTBM node load took {}ms", end - start);
-    println!("Total {} tiles", tiles);
-
-    // let mut buf = String::new();
-    // std::io::stdin().read_line(&mut buf);
+    println!("OTBM node load took {}ms for {} tiles", end - start, tiles);
 
     let display = glutin::WindowBuilder::new()
         .with_title(format!("Map Editor"))

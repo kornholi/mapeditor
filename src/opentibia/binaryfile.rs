@@ -18,9 +18,7 @@ impl Node {
             let data = try!(r.read_byte());
 
             if data != Node::START {
-                let invalid_data_error: io::Error = io::Error::new(io::ErrorKind::InvalidInput,
-                                                                   "expected start of a node");
-                return Err(invalid_data_error);
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "expected start of a node"));
             }
         }
 
@@ -59,8 +57,7 @@ pub fn streaming_parser<R, F>(mut r: R, skip_start: bool, mut callback: F) -> io
         let data = try!(r.read_byte());
 
         if data != Node::START {
-            let invalid_data_error = io::Error::new(io::ErrorKind::InvalidInput, "expected start of a node");
-            return Err(invalid_data_error);
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "expected start of a node"));
         }
     }
 

@@ -15,7 +15,7 @@ pub struct Position {
 
 impl Position {
     pub fn deserialize<R>(mut r: R) -> io::Result<Position>
-        where R: io::Read 
+        where R: io::Read
     {
         Ok(Position {
             x: try!(r.read_u16()),

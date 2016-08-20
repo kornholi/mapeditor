@@ -16,7 +16,9 @@ pub type SpriteImage<'a> = glium::texture::RawImage2d<'a, u8>;
 //  autodetect u16/u32 based on signature
 
 impl SpriteContainer {
-    pub fn new(r: &mut io::Read) -> io::Result<SpriteContainer> {
+    pub fn new<R>(mut r: R) -> io::Result<SpriteContainer>
+        where R: io::Read
+    {
         let signature = try!(r.read_u32());
         let num_sprites = try!(r.read_u32());
 
@@ -33,10 +35,9 @@ impl SpriteContainer {
         })
     }
 
-    pub fn get_sprite<T: io::Read + io::Seek>(&self,
-                                              f: &mut T,
-                                              idx: u32)
-                                              -> io::Result<SpriteImage> {
+    pub fn get_sprite<R>(&self, mut f: R, idx: u32) -> io::Result<SpriteImage>
+        where R: io::Read + io::Seek
+    {
         try!(f.seek(io::SeekFrom::Start(self.offsets[idx as usize - 1] as u64)));
 
         let mut raw_data = Vec::with_capacity(32 * 32 * 4);
@@ -64,7 +65,7 @@ impl SpriteContainer {
                 try!(f.read(&mut raw_data[p..p + 3]));
 
                 // Set alpha channel
-                raw_data[p + 3] = 255; 
+                raw_data[p + 3] = 255;
                 p += 4;
             }
 
