@@ -15,10 +15,6 @@ pub type SpriteImage<'a> = glium::texture::RawImage2d<'a, u8>;
 //  support for u16 num sprites
 //  autodetect u16/u32 based on signature
 
-fn srgb_to_linear(srgb: u8) -> u8 {
-    (((srgb as f32) / 255.).powf(2.2) * 255.) as u8
-}
-
 impl SpriteContainer {
     pub fn new(r: &mut io::Read) -> io::Result<SpriteContainer> {
         let signature = try!(r.read_u32());
@@ -67,21 +63,14 @@ impl SpriteContainer {
             for _ in 0..pixels {
                 try!(f.read(&mut raw_data[p..p + 3]));
 
-                // FIXME: manual sRGB to linear conversion until
-                // srgb texture writing support lands in glium
-                raw_data[p] = srgb_to_linear(raw_data[p]);
-                raw_data[p + 1] = srgb_to_linear(raw_data[p + 1]);
-                raw_data[p + 2] = srgb_to_linear(raw_data[p + 2]);
-
-                raw_data[p + 3] = 255; // alpha channel
-
+                // Set alpha channel
+                raw_data[p + 3] = 255; 
                 p += 4;
             }
 
             size -= 2 + 2 + pixels * 3;
         }
 
-        let img = glium::texture::RawImage2d::from_raw_rgba_reversed(raw_data, (32, 32));
-        Ok(img)
+        Ok(glium::texture::RawImage2d::from_raw_rgba_reversed(raw_data, (32, 32)))
     }
 }

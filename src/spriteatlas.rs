@@ -3,17 +3,17 @@ use std::collections::HashMap;
 use glium;
 
 use glium::backend::Facade;
-use glium::texture::Texture2d;
+use glium::texture::SrgbTexture2d;
 
 pub struct SpriteAtlas {
-    pub texture: Texture2d,
+    pub texture: SrgbTexture2d,
 
     sprites: HashMap<u32, [f32; 2]>,
 }
 
 impl SpriteAtlas {
     pub fn new<F: Facade>(display: &F) -> SpriteAtlas {
-        let texture = Texture2d::empty(display, 2048, 2048).expect("texture creation failed");
+        let texture = SrgbTexture2d::empty(display, 2048, 2048).expect("texture creation failed");
 
         SpriteAtlas {
             texture: texture,
