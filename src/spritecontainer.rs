@@ -38,14 +38,10 @@ impl SpriteContainer {
     pub fn get_sprite<R>(&self, mut f: R, idx: u32) -> io::Result<SpriteImage>
         where R: io::Read + io::Seek
     {
-        try!(f.seek(io::SeekFrom::Start(self.offsets[idx as usize - 1] as u64)));
+        let offset = self.offsets[idx as usize - 1];
+        try!(f.seek(io::SeekFrom::Start(offset as u64)));
 
-        let mut raw_data = Vec::with_capacity(32 * 32 * 4);
-
-        unsafe {
-            ptr::write_bytes(raw_data.as_mut_ptr(), 0, 32 * 32 * 4);
-            raw_data.set_len(32 * 32 * 4);
-        }
+        let mut raw_data = vec![0; 32 * 32 * 4];
 
         // RGB color key (typically magenta)
         try!(f.read_byte());
