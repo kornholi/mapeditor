@@ -2,7 +2,7 @@ use glium;
 use cgmath::{self, Zero};
 use clock_ticks;
 
-use std::thread;
+use std::{cmp, f32, thread};
 use std::time::Duration;
 
 use glium::Surface;
@@ -25,6 +25,8 @@ pub struct RootWindow {
     vertex_buffer_len: usize,
 
     dimensions: (f32, f32),
+    zoom_level: i32,
+    scaling_factor: f32,
     ul_offset: (f32, f32),
 
     dragging: bool,
@@ -73,6 +75,8 @@ impl RootWindow {
             ortho_matrix: cgmath::Matrix4::zero(),
 
             dimensions: (0., 0.),
+            zoom_level: 0,
+            scaling_factor: 1.0,
             ul_offset: (80. * 32., 110. * 32.0),
 
             dragging: false,
@@ -86,13 +90,15 @@ impl RootWindow {
     }
 
     fn calculate_projection(&mut self) {
+        self.scaling_factor = 1.33_f32.powi(self.zoom_level);
+
         let (w, h) = self.dimensions;
+        let (w, h) = (w * self.scaling_factor, h * self.scaling_factor);
         let ul = self.ul_offset;
 
         self.ortho_matrix = cgmath::ortho(ul.0, ul.0 + w, ul.1 + h, ul.1, -1.0, 1.0);
 
         // FIXME FIXME FIXME FIXME
-
         let (w, h) = (w / 32., h / 32.);
         let (w, h) = (w.ceil() as u16, h.ceil() as u16);
 
@@ -111,7 +117,7 @@ impl RootWindow {
         // polling and handling the events received by the window
         while let Some(event) = self.display.poll_events().next() {
             use glium::glutin::Event::*;
-            use glium::glutin::MouseButton;
+            use glium::glutin::{MouseButton, MouseScrollDelta};
             // println!("ev: {:?}", event);
 
             match event {
@@ -124,8 +130,8 @@ impl RootWindow {
                         if let Some((prev_x, prev_y)) = self.dragging_position {
                             let offset = (prev_x - x, prev_y - y);
 
-                            self.ul_offset.0 += offset.0 as f32;
-                            self.ul_offset.1 += offset.1 as f32;
+                            self.ul_offset.0 += offset.0 as f32 * self.scaling_factor;
+                            self.ul_offset.1 += offset.1 as f32 * self.scaling_factor;
 
                             self.calculate_projection();
                         }
@@ -145,6 +151,12 @@ impl RootWindow {
                             self.dragging_position = None;
                         }
                     }
+                }
+
+                // FIXME: Support PixelDelta
+                MouseWheel(MouseScrollDelta::LineDelta(h, v), _) => {
+                    self.zoom_level = cmp::max(-4, self.zoom_level - v as i32);
+                    self.calculate_projection();
                 }
 
                 Focused(false) => {
