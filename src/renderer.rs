@@ -1,5 +1,7 @@
 use std::{io, fs};
 
+use clock_ticks;
+
 use datcontainer;
 use datcontainer::DatContainer;
 
@@ -87,9 +89,13 @@ impl Renderer {
 
         self.vertices.clear();
 
-        for sec in sectors {
+        let start = clock_ticks::precise_time_ms();
+        for sec in &sectors {
             self.render_sector(sec);
-        }
+        } 
+        let end = clock_ticks::precise_time_ms();
+
+        println!("Rendering {} sectors took {}ms", sectors.len(), end - start);
 
         if self.vertices.len() > 0 {
             self.new_data = true;
