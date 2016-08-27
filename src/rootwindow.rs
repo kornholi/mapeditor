@@ -21,6 +21,8 @@ pub struct RootWindow {
     renderer: Renderer,
     ortho_matrix: cgmath::Matrix4<f32>,
     program: glium::Program,
+
+    temp_buffer: Vec<Vertex>,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     vertex_buffer_len: usize,
 
@@ -69,6 +71,7 @@ impl RootWindow {
 
             program: program,
 
+            temp_buffer: Vec::new(),
             vertex_buffer: vertex_buffer,
             vertex_buffer_len: 0,
 
@@ -105,7 +108,7 @@ impl RootWindow {
         let (u, l) = (ul.0 / 32., ul.1 / 32.);
         let (u, l) = (u as i32, l as i32);
 
-        self.renderer.resize((u, l), (w, h));
+        self.renderer.resize((u, l), (w, h), &mut self.temp_buffer);
     }
 
     pub fn run(&mut self) {
@@ -168,8 +171,8 @@ impl RootWindow {
             }
         }
 
-        if self.renderer.new_data {
-            let data = &self.renderer.vertices;
+        if self.temp_buffer.len() > 0 {
+            let data = &mut self.temp_buffer;
 
             let start = clock_ticks::precise_time_ms();
             self.vertex_buffer.slice(0..data.len()).unwrap().write(data);
@@ -178,7 +181,7 @@ impl RootWindow {
             println!("VBO upload took {}ms", end - start);
 
             self.vertex_buffer_len = data.len();
-            self.renderer.new_data = false;
+            data.clear();
         }
 
         let ortho_matrix: &[[f32; 4]; 4] = self.ortho_matrix.as_ref();

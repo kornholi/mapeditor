@@ -122,9 +122,7 @@ fn main() {
         atlas: SpriteAtlas::new(&display),
         map: map,
 
-        vertices: Vec::new(),
         bounds: (0, 0, 0, 0),
-        new_data: false, // ..Default::default()
     };
 
     let mut root = RootWindow::new(display, rend);

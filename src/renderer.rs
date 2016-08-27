@@ -25,12 +25,10 @@ pub struct Renderer {
     pub dat: DatContainer,
     pub otb: itemtypes::Container,
 
-    pub atlas: SpriteAtlas,
     pub map: map::Map,
 
-    pub vertices: Vec<Vertex>,
+    pub atlas: SpriteAtlas,
     pub bounds: (u16, u16, u16, u16),
-    pub new_data: bool,
 }
 
 fn get_sprite_id(obj: &datcontainer::Thing,
@@ -50,7 +48,7 @@ fn get_sprite_id(obj: &datcontainer::Thing,
 }
 
 impl Renderer {
-    pub fn resize(&mut self, ul: (i32, i32), size: (u16, u16)) {
+    pub fn resize(&mut self, ul: (i32, i32), size: (u16, u16), output: &mut Vec<Vertex>) {
         let (u, l) = ul;
         let (u, l) = (u as u16, l as u16);
         let (w, h) = size;
@@ -71,39 +69,32 @@ impl Renderer {
                        ((u + 31) & !31) + (w + 31) & !31,
                        ((l + 31) & !31) + (h + 31) & !31);
 
-        let mut sectors = Vec::new();
+        let start = clock_ticks::precise_time_ms();
+        let mut sector_count = 0;
 
         for x in (0..w + 31).step_by(map::Sector::SIZE) {
             for y in (0..h + 31).step_by(map::Sector::SIZE) {
-                let sec = self.map.get(&Position {
+                let pos = Position {
                     x: u + x,
                     y: l + y,
                     z: 7,
-                });
+                };
 
-                if let Some(sec) = sec {
-                    sectors.push(sec.origin);
+                if self.try_render_sector(&pos, output) {
+                    sector_count += 1;
                 }
             }
         }
 
-        self.vertices.clear();
-
-        let start = clock_ticks::precise_time_ms();
-        for sec in &sectors {
-            self.render_sector(sec);
-        } 
         let end = clock_ticks::precise_time_ms();
-
-        println!("Rendering {} sectors took {}ms", sectors.len(), end - start);
-
-        if self.vertices.len() > 0 {
-            self.new_data = true;
-        }
+        println!("Rendering {} sectors took {}ms", sector_count, end - start);
     }
 
-    fn render_sector(&mut self, pos: &opentibia::Position) {
-        let sec = self.map.get(pos).unwrap();
+    fn try_render_sector(&mut self, pos: &opentibia::Position, output: &mut Vec<Vertex>) -> bool {
+        let sec = match self.map.get(pos) {
+            Some(sec) => sec,
+            None => return false
+        };
 
         let mut pos = 0u16;
 
@@ -149,7 +140,7 @@ impl Renderer {
                                     let obj_y = tile_y as f32 - y as f32 -
                                                 (obj.displacement.1 + elevation) as f32 / 32.;
 
-                                    self.vertices.push(Vertex {
+                                    output.push(Vertex {
                                         position: [obj_x, obj_y, 7.],
                                         color: [1.0, 1.0, 1.0, 1.0],
                                         tex_coord: tex_pos,
@@ -165,5 +156,7 @@ impl Renderer {
 
             pos += 1;
         }
+
+        return true;
     }
 }
