@@ -73,7 +73,7 @@ impl Renderer {
 
         for x in (0..w + 31).step_by(map::Sector::SIZE) {
             for y in (0..h + 31).step_by(map::Sector::SIZE) {
-                let sec = self.map.get(Position {
+                let sec = self.map.get(&Position {
                     x: u + x,
                     y: l + y,
                     z: 7,
@@ -96,24 +96,23 @@ impl Renderer {
         }
     }
 
-    fn render_sector(&mut self, pos: opentibia::Position) {
+    fn render_sector(&mut self, pos: &opentibia::Position) {
         let sec = self.map.get(pos).unwrap();
 
         let mut pos = 0u16;
 
-        // must iterate with y
-        for ref tile in sec.tiles.iter() {
+        // Must iterate with y
+        for tile in &sec.tiles {
             let tile_x = sec.origin.x + pos / 32;
             let tile_y = sec.origin.y + pos % 32;
 
             let mut elevation = 0;
 
-            for ref item in tile.iter() {
+            for item in tile {
                 let otb_entry = &self.otb.items[item.id as usize];
 
                 if let Some(client_id) = otb_entry.client_id {
                     let obj = &self.dat.items[(client_id - 100) as usize];
-                    // println!("dat: {:?}", obj);
 
                     let pattern_x = tile_x as u16 % obj.pattern_width as u16;
                     let pattern_y = tile_y as u16 % obj.pattern_height as u16;
