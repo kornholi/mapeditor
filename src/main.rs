@@ -68,8 +68,8 @@ fn main() {
     };
 
     // spr
-    let mut spr_data = std::io::BufReader::new(File::open(conf["spr"].as_str().unwrap()).unwrap());
-    let spr = SpriteContainer::new(&mut spr_data).unwrap();
+    let spr_data = std::io::BufReader::new(File::open(conf["spr"].as_str().unwrap()).unwrap());
+    let spr = SpriteContainer::new(spr_data).unwrap();
 
     // dat
     let mut data = std::io::BufReader::new(File::open(conf["dat"].as_str().unwrap()).unwrap());
@@ -116,7 +116,6 @@ fn main() {
 
     let rend = Renderer {
         spr: spr,
-        spr_data: spr_data,
         dat: dat,
         otb: otb,
 

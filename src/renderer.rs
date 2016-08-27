@@ -19,8 +19,7 @@ pub struct Vertex {
 }
 
 pub struct Renderer {
-    pub spr: SpriteContainer,
-    pub spr_data: io::BufReader<fs::File>,
+    pub spr: SpriteContainer<io::BufReader<fs::File>>,
     pub dat: DatContainer,
     pub otb: itemtypes::Container,
 
@@ -129,9 +128,14 @@ impl Renderer {
                                     let mut tex_pos = self.atlas.get(spr_id);
 
                                     if tex_pos == [0., 0.] {
-                                        let sprite = self.spr
-                                            .get_sprite(&mut self.spr_data, spr_id)
+                                        use glium;
+                                        let mut sprite_data = vec![0; 32 * 32 * 4];
+
+                                        self.spr
+                                            .get_sprite(spr_id, &mut sprite_data, 32 * 4)
                                             .unwrap();
+
+                                        let sprite = glium::texture::RawImage2d::from_raw_rgba_reversed(sprite_data, (32, 32));
                                         tex_pos = self.atlas.add(spr_id, sprite);
                                     }
 
