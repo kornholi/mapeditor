@@ -202,13 +202,17 @@ impl RootWindow {
         if !self.temp_buffer.is_empty() {
             let data = &mut self.temp_buffer;
 
+            let n = cmp::min(data.len(), self.vertex_buffer.len());
+            if data.len() > self.vertex_buffer.len() {
+                println!("warning: rendered {} sprites but can only fit {}", data.len(), self.vertex_buffer.len());
+            }
+
             let start = clock_ticks::precise_time_ms();
-            self.vertex_buffer.slice(0..data.len()).unwrap().write(data);
+            self.vertex_buffer.slice(..n).unwrap().write(&data[..n]);
+            self.vertex_buffer_len = n;
             let end = clock_ticks::precise_time_ms();
 
             println!("VBO upload took {}ms", end - start);
-
-            self.vertex_buffer_len = data.len();
             data.clear();
         }
 
