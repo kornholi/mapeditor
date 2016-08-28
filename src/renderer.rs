@@ -34,7 +34,7 @@ fn get_sprite_id(obj: &datcontainer::Thing,
 impl Renderer {
     pub fn resize<F>(&mut self, ul: (i32, i32), size: (u16, u16), mut sprite_callback: F)
         where F: FnMut((f32, f32), u32)
-     {
+    {
         let (u, l) = ul;
         let (u, l) = (u as u16, l as u16);
         let (w, h) = size;
@@ -77,7 +77,7 @@ impl Renderer {
         println!("Rendering {} sectors took {}ms", sector_count, end - start);
     }
 
-    fn render_sector<F>(&self, sec: &map::Sector, sprite_callback: &mut F) 
+    fn render_sector<F>(&self, sec: &map::Sector, sprite_callback: &mut F)
         where F: FnMut((f32, f32), u32)
     {
         let mut pos = 0u16;

@@ -219,8 +219,7 @@ impl Loader {
                 while !data.is_empty() {
                     use self::NodeAttributeKind::*;
                     let raw_attr = try!(data.read_byte());
-                    let attr = NodeAttributeKind::from_u8(raw_attr)
-                        .expect("unknown attribute");
+                    let attr = NodeAttributeKind::from_u8(raw_attr).expect("unknown attribute");
 
                     match attr {
                         TileFlags => {

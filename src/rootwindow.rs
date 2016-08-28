@@ -54,7 +54,8 @@ impl RootWindow {
                renderer: Renderer,
                spr: SpriteContainer<io::BufReader<fs::File>>)
                -> RootWindow {
-        let vertex_buffer = glium::VertexBuffer::empty(&display, 16384).expect("VBO creation failed");
+        let vertex_buffer = glium::VertexBuffer::empty(&display, 16384)
+            .expect("VBO creation failed");
 
         // {
         // use image;
@@ -73,9 +74,10 @@ impl RootWindow {
                 geometry: include_str!("shaders/330.geom"),
                 fragment: include_str!("shaders/330.frag")
             },
-        ).unwrap();
+        )
+            .unwrap();
 
-        RootWindow {            
+        RootWindow {
             spr: spr,
             spr_atlas: SpriteAtlas::new(&display),
             renderer: renderer,
@@ -126,7 +128,7 @@ impl RootWindow {
 
         self.renderer.resize((u, l), (w, h), |(x, y), sprite_id| {
             let tex_pos = atlas.get_or_load(sprite_id, |buf, stride| {
-                spr.get_sprite(sprite_id, buf, stride).expect("failed to load sprite {}", sprite_id)
+                spr.get_sprite(sprite_id, buf, stride).expect("failed to load sprite")
             });
 
             out.push(Vertex {
@@ -183,7 +185,7 @@ impl RootWindow {
                 }
 
                 // FIXME: Support PixelDelta
-                MouseWheel(MouseScrollDelta::LineDelta(h, v), _) => {
+                MouseWheel(MouseScrollDelta::LineDelta(_, v), _) => {
                     self.zoom_level = cmp::max(-4, self.zoom_level - v as i32);
                     self.calculate_projection();
                 }

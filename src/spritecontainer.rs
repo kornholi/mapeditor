@@ -3,7 +3,7 @@ use glium;
 
 use helpers::ReadExt;
 
-pub struct SpriteContainer<R>{
+pub struct SpriteContainer<R> {
     pub f: R,
     pub signature: u32,
     pub num_sprites: u32,
@@ -16,9 +16,10 @@ pub type SpriteImage<'a> = glium::texture::RawImage2d<'a, u8>;
 //  support for u16 num sprites
 //  autodetect u16/u32 based on signature
 
-impl<R> SpriteContainer<R> where R: io::Read + io::Seek {
-    pub fn new(mut r: R) -> io::Result<SpriteContainer<R>>
-    {
+impl<R> SpriteContainer<R>
+    where R: io::Read + io::Seek
+{
+    pub fn new(mut r: R) -> io::Result<SpriteContainer<R>> {
         let signature = try!(r.read_u32());
         let num_sprites = try!(r.read_u32());
 
@@ -36,8 +37,11 @@ impl<R> SpriteContainer<R> where R: io::Read + io::Seek {
         })
     }
 
-    pub fn get_sprite(&mut self, idx: u32, output: &mut [u8], output_stride: usize) -> io::Result<()>
-    {
+    pub fn get_sprite(&mut self,
+                      idx: u32,
+                      output: &mut [u8],
+                      output_stride: usize)
+                      -> io::Result<()> {
         let offset = self.offsets[idx as usize - 1];
         try!(self.f.seek(io::SeekFrom::Start(offset as u64)));
 

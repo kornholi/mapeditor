@@ -95,11 +95,12 @@ fn main() {
     let mut tiles = 0;
 
     otbm_map.load(&mut data, |ref pos, items| {
-        tiles += 1;
+            tiles += 1;
 
-        let sec = map.get_or_create(pos);
-        sec.get_tile(pos).extend_from_slice(items);
-    }).unwrap();
+            let sec = map.get_or_create(pos);
+            sec.get_tile(pos).extend_from_slice(items);
+        })
+        .expect("failed to load OTBM");
 
     let end = clock_ticks::precise_time_ms();
 

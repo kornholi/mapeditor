@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use std::collections::HashMap;
 
 use opentibia::Position;
@@ -20,8 +19,7 @@ impl Map {
         Map { ..Default::default() }
     }
 
-    pub fn get(&self, pos: &Position) -> Option<&Sector>
-    {
+    pub fn get(&self, pos: &Position) -> Option<&Sector> {
         let sector_pos = Position {
             x: pos.x & !31,
             y: pos.y & !31,
@@ -74,8 +72,7 @@ impl Sector {
         }
     }
 
-    pub fn get_tile(&mut self, pos: &Position) -> &mut Vec<Item>
-    {
+    pub fn get_tile(&mut self, pos: &Position) -> &mut Vec<Item> {
         &mut self.tiles[((pos.x % Sector::SIZE) * Sector::SIZE + (pos.y % Sector::SIZE)) as usize]
     }
 }
