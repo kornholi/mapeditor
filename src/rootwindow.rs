@@ -3,7 +3,6 @@ use cgmath::{self, Zero};
 use clock_ticks;
 
 use std::{cmp, f32, thread, io, fs};
-use std::borrow::Cow;
 use std::time::Duration;
 
 use glium::Surface;
@@ -124,27 +123,11 @@ impl RootWindow {
         let spr = &mut self.spr;
         let atlas = &mut self.spr_atlas;
         let out = &mut self.temp_buffer;
-        let mut temp_sprite = vec![0; 32 * 32 * 4];
 
         self.renderer.resize((u, l), (w, h), |(x, y), sprite_id| {
-            let mut tex_pos = atlas.get(sprite_id);
-
-            if tex_pos == [0., 0.] {
-                for x in &mut temp_sprite {
-                    *x = 0;
-                }
-
-                spr.get_sprite(sprite_id, &mut temp_sprite, 32 * 4).unwrap();
-
-                let sprite = glium::texture::RawImage2d {
-                    data: Cow::Borrowed(&temp_sprite),
-                    width: 32,
-                    height: 32,
-                    format: glium::texture::ClientFormat::U8U8U8U8
-                };
-
-                tex_pos = atlas.add(sprite_id, sprite);
-            }
+            let tex_pos = atlas.get_or_load(sprite_id, |buf, stride| {
+                spr.get_sprite(sprite_id, buf, stride).expect("failed to load sprite {}", sprite_id)
+            });
 
             out.push(Vertex {
                 position: [x, y, 7.],
