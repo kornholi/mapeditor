@@ -20,6 +20,8 @@ pub struct Vertex {
     pub tex_coord: [f32; 2],
 }
 
+implement_vertex!(Vertex, position, color, tex_coord);
+
 pub struct Renderer {
     pub spr: SpriteContainer<io::BufReader<fs::File>>,
     pub dat: DatContainer,
@@ -93,7 +95,7 @@ impl Renderer {
     fn try_render_sector(&mut self, pos: &opentibia::Position, output: &mut Vec<Vertex>) -> bool {
         let sec = match self.map.get(pos) {
             Some(sec) => sec,
-            None => return false
+            None => return false,
         };
 
         let mut pos = 0u16;

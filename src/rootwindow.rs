@@ -39,12 +39,8 @@ impl RootWindow {
     pub fn new(display: glium::backend::glutin_backend::GlutinFacade,
                renderer: Renderer)
                -> RootWindow {
-        let vertex_buffer = {
-            implement_vertex!(Vertex, position, color, tex_coord);
-
-            glium::VertexBuffer::empty(&display, 16384).expect("VBO creation failed")
-        };
-
+        let vertex_buffer = glium::VertexBuffer::empty(&display, 16384).expect("VBO creation failed");
+        
         // {
         // use image;
         // use std;
@@ -62,8 +58,7 @@ impl RootWindow {
                 geometry: include_str!("shaders/330.geom"),
                 fragment: include_str!("shaders/330.frag")
             },
-        )
-            .unwrap();
+        ).unwrap();
 
         RootWindow {
             display: display,
