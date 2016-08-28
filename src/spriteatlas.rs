@@ -25,36 +25,6 @@ impl SpriteAtlas {
         }
     }
 
-    pub fn get(&self, id: u32) -> [f32; 2] {
-        match self.sprites.get(&id) {
-            Some(pos) => *pos,
-            None => [0., 0.],
-        }
-    }
-
-    pub fn add<'a, T>(&mut self, id: u32, data: T) -> [f32; 2]
-        where T: glium::texture::Texture2dDataSource<'a>
-    {
-        assert!(self.sprites.len() < (2048 * 2048) / (34 * 34));
-        let width_in_sprites = 2048 / 34;
-
-        let end_idx = self.sprites.len() + 1;
-        let (l, b) = (end_idx % width_in_sprites, end_idx / width_in_sprites);
-
-        let pos = [l as f32 * 34. / 2048., b as f32 * 34. / 2048.];
-
-        self.texture.write(glium::Rect {
-                               left: l as u32 * 34,
-                               bottom: b as u32 * 34,
-                               width: 32,
-                               height: 32,
-                           },
-                           data);
-
-        self.sprites.insert(id, pos);
-        pos
-    }
-
     pub fn get_or_load<F>(&mut self, id: u32, mut loader: F) -> [f32; 2]
         where F: FnMut(&mut [u8], usize)
     {
