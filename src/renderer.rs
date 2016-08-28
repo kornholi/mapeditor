@@ -1,3 +1,4 @@
+use std::cmp;
 use clock_ticks;
 
 use datcontainer;
@@ -11,7 +12,6 @@ pub struct Renderer {
     pub otb: itemtypes::Container,
 
     pub map: map::Map,
-
     pub bounds: (u16, u16, u16, u16),
 }
 
@@ -35,12 +35,10 @@ impl Renderer {
     pub fn resize<F>(&mut self, ul: (i32, i32), size: (u16, u16), mut sprite_callback: F)
         where F: FnMut((f32, f32), u32)
     {
-        let (u, l) = ul;
-        let (u, l) = (u as u16, l as u16);
+        let (u, l) = (cmp::max(ul.0, 0) as u16, cmp::max(ul.1, 0) as u16);
         let (w, h) = size;
 
         let br = ((u + w), (l + h));
-
         let bnd = self.bounds;
 
         if u < bnd.0 || l < bnd.1 || br.0 > bnd.2 || br.1 > bnd.3 {
