@@ -2,14 +2,25 @@ use glium;
 use cgmath::{self, Zero};
 use clock_ticks;
 
-use std::{cmp, f32, thread};
+use std::{cmp, f32, thread, io, fs};
 use std::time::Duration;
 
 use glium::Surface;
 use glium::index::{PrimitiveType, NoIndices};
 
-use super::renderer::{Renderer, Vertex};
+use spritecontainer::SpriteContainer;
 
+use super::renderer::Renderer;
+use super::spriteatlas::SpriteAtlas;
+
+#[derive(Copy, Clone, Debug)]
+pub struct Vertex {
+    pub position: [f32; 3],
+    pub color: [f32; 4],
+    pub tex_coord: [f32; 2],
+}
+
+implement_vertex!(Vertex, position, color, tex_coord);
 enum Action {
     Stop,
     Continue,
@@ -19,6 +30,9 @@ pub struct RootWindow {
     display: glium::backend::glutin_backend::GlutinFacade,
 
     renderer: Renderer,
+    spr: SpriteContainer<io::BufReader<fs::File>>,
+    spr_atlas: SpriteAtlas,
+
     ortho_matrix: cgmath::Matrix4<f32>,
     program: glium::Program,
 
@@ -37,10 +51,11 @@ pub struct RootWindow {
 
 impl RootWindow {
     pub fn new(display: glium::backend::glutin_backend::GlutinFacade,
-               renderer: Renderer)
+               renderer: Renderer,
+               spr: SpriteContainer<io::BufReader<fs::File>>)
                -> RootWindow {
         let vertex_buffer = glium::VertexBuffer::empty(&display, 16384).expect("VBO creation failed");
-        
+
         // {
         // use image;
         // use std;
@@ -60,10 +75,12 @@ impl RootWindow {
             },
         ).unwrap();
 
-        RootWindow {
-            display: display,
+        RootWindow {            
+            spr: spr,
+            spr_atlas: SpriteAtlas::new(&display),
             renderer: renderer,
 
+            display: display,
             program: program,
 
             temp_buffer: Vec::new(),
@@ -103,7 +120,29 @@ impl RootWindow {
         let (u, l) = (ul.0 / 32., ul.1 / 32.);
         let (u, l) = (u as i32, l as i32);
 
-        self.renderer.resize((u, l), (w, h), &mut self.temp_buffer);
+        let spr = &mut self.spr;
+        let atlas = &mut self.spr_atlas;
+        let out = &mut self.temp_buffer;
+
+        self.renderer.resize((u, l), (w, h), |(x, y), sprite_id| {
+            let mut tex_pos = atlas.get(sprite_id);
+
+            if tex_pos == [0., 0.] {
+                let mut sprite_data = vec![0; 32 * 32 * 4];
+
+                spr.get_sprite(sprite_id, &mut sprite_data, 32 * 4)
+                    .unwrap();
+
+                let sprite = glium::texture::RawImage2d::from_raw_rgba_reversed(sprite_data, (32, 32));
+                tex_pos = atlas.add(sprite_id, sprite);
+            }
+
+            out.push(Vertex {
+                position: [x, y, 7.],
+                color: [1.0, 1.0, 1.0, 1.0],
+                tex_coord: tex_pos,
+            });
+        });
     }
 
     pub fn run(&mut self) {
@@ -184,7 +223,7 @@ impl RootWindow {
         // building the uniforms
         let uniforms = uniform! {
             matrix: *ortho_matrix,
-            tex: self.renderer.atlas.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+            tex: self.spr_atlas.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear)
         };
 
         let draw_params =

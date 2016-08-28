@@ -1,35 +1,17 @@
-use std::{io, fs};
-
 use clock_ticks;
 
 use datcontainer;
 use datcontainer::DatContainer;
-
-use spritecontainer::SpriteContainer;
-
-use opentibia;
 use opentibia::{itemtypes, Position};
 
 use super::map;
-use super::spriteatlas::SpriteAtlas;
-
-#[derive(Copy, Clone, Debug)]
-pub struct Vertex {
-    pub position: [f32; 3],
-    pub color: [f32; 4],
-    pub tex_coord: [f32; 2],
-}
-
-implement_vertex!(Vertex, position, color, tex_coord);
 
 pub struct Renderer {
-    pub spr: SpriteContainer<io::BufReader<fs::File>>,
     pub dat: DatContainer,
     pub otb: itemtypes::Container,
 
     pub map: map::Map,
 
-    pub atlas: SpriteAtlas,
     pub bounds: (u16, u16, u16, u16),
 }
 
@@ -50,7 +32,9 @@ fn get_sprite_id(obj: &datcontainer::Thing,
 }
 
 impl Renderer {
-    pub fn resize(&mut self, ul: (i32, i32), size: (u16, u16), output: &mut Vec<Vertex>) {
+    pub fn resize<F>(&mut self, ul: (i32, i32), size: (u16, u16), mut sprite_callback: F)
+        where F: FnMut((f32, f32), u32)
+     {
         let (u, l) = ul;
         let (u, l) = (u as u16, l as u16);
         let (w, h) = size;
@@ -76,13 +60,14 @@ impl Renderer {
 
         for x in (0..w + 31).step_by(map::Sector::SIZE) {
             for y in (0..h + 31).step_by(map::Sector::SIZE) {
-                let pos = Position {
+                let sec = self.map.get(&Position {
                     x: u + x,
                     y: l + y,
                     z: 7,
-                };
+                });
 
-                if self.try_render_sector(&pos, output) {
+                if let Some(sec) = sec {
+                    self.render_sector(&sec, &mut sprite_callback);
                     sector_count += 1;
                 }
             }
@@ -92,12 +77,9 @@ impl Renderer {
         println!("Rendering {} sectors took {}ms", sector_count, end - start);
     }
 
-    fn try_render_sector(&mut self, pos: &opentibia::Position, output: &mut Vec<Vertex>) -> bool {
-        let sec = match self.map.get(pos) {
-            Some(sec) => sec,
-            None => return false,
-        };
-
+    fn render_sector<F>(&self, sec: &map::Sector, sprite_callback: &mut F) 
+        where F: FnMut((f32, f32), u32)
+    {
         let mut pos = 0u16;
 
         // Must iterate with y
@@ -123,30 +105,12 @@ impl Renderer {
                                 let spr_id = obj.sprite_ids[spr_idx] as u32;
 
                                 if spr_id != 0 {
-                                    let mut tex_pos = self.atlas.get(spr_id);
-
-                                    if tex_pos == [0., 0.] {
-                                        use glium;
-                                        let mut sprite_data = vec![0; 32 * 32 * 4];
-
-                                        self.spr
-                                            .get_sprite(spr_id, &mut sprite_data, 32 * 4)
-                                            .unwrap();
-
-                                        let sprite = glium::texture::RawImage2d::from_raw_rgba_reversed(sprite_data, (32, 32));
-                                        tex_pos = self.atlas.add(spr_id, sprite);
-                                    }
-
                                     let obj_x = tile_x as f32 - x as f32 -
                                                 (obj.displacement.0 + elevation) as f32 / 32.;
                                     let obj_y = tile_y as f32 - y as f32 -
                                                 (obj.displacement.1 + elevation) as f32 / 32.;
 
-                                    output.push(Vertex {
-                                        position: [obj_x, obj_y, 7.],
-                                        color: [1.0, 1.0, 1.0, 1.0],
-                                        tex_coord: tex_pos,
-                                    });
+                                    sprite_callback((obj_x, obj_y), spr_id);
                                 }
                             }
                         }
@@ -158,7 +122,5 @@ impl Renderer {
 
             pos += 1;
         }
-
-        return true;
     }
 }

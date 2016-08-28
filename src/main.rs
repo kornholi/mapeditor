@@ -33,8 +33,6 @@ use spritecontainer::SpriteContainer;
 use renderer::Renderer;
 use rootwindow::RootWindow;
 
-use spriteatlas::SpriteAtlas;
-
 use opentibia::itemtypes;
 use helpers::ReadExt;
 
@@ -115,17 +113,15 @@ fn main() {
         .unwrap();
 
     let rend = Renderer {
-        spr: spr,
         dat: dat,
         otb: otb,
 
-        atlas: SpriteAtlas::new(&display),
         map: map,
 
         bounds: (0, 0, 0, 0),
     };
 
-    let mut root = RootWindow::new(display, rend);
+    let mut root = RootWindow::new(display, rend, spr);
 
     root.resize(1100, 1100);
     root.run();
