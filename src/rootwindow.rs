@@ -54,7 +54,7 @@ impl RootWindow {
                renderer: Renderer,
                spr: SpriteContainer<io::BufReader<fs::File>>)
                -> RootWindow {
-        let vertex_buffer = glium::VertexBuffer::empty(&display, 16384)
+        let vertex_buffer = glium::VertexBuffer::empty(&display, 1 << 24)
             .expect("VBO creation failed");
 
         // {
@@ -140,12 +140,11 @@ impl RootWindow {
     }
 
     pub fn run(&mut self) {
-        // the main loop
         start_loop(|| self.loop_callback());
     }
 
     fn loop_callback(&mut self) -> Action {
-        // polling and handling the events received by the window
+        // Polling and handling the events received by the window
         while let Some(event) = self.display.poll_events().next() {
             use glium::glutin::Event::*;
             use glium::glutin::{MouseButton, MouseScrollDelta};
@@ -185,6 +184,7 @@ impl RootWindow {
                 }
 
                 // FIXME: Support PixelDelta
+                // FIXME: Zoom at mouse position not UL
                 MouseWheel(MouseScrollDelta::LineDelta(_, v), _) => {
                     self.zoom_level = cmp::max(-4, self.zoom_level - v as i32);
                     self.calculate_projection();

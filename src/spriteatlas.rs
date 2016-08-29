@@ -12,7 +12,31 @@ pub struct SpriteAtlas {
     loading_buffer: Vec<u8>,
 }
 
-static EMPTY_SPRITE: &'static [u8] = &[0; 32 * 32 * 4];
+static EMPTY_SPRITE: &'static [u8] = &[0; 34 * 34 * 4];
+
+#[inline(always)]
+fn copy_pixel(buf: &mut [u8], tx: usize, ty: usize, fx: usize, fy: usize) {
+    for i in 0..4 {
+        buf[ty * 34 * 4 + tx * 4 + i] = buf[fy * 34 * 4 + fx * 4 + i];
+    }    
+}
+
+fn copy_borders(buf: &mut [u8]) {
+    // Copy top and bottom borders
+    {
+        let (top, rest) = buf.split_at_mut(34 * 4);
+        let (body, bottom) = rest.split_at_mut(32 * 34 * 4);
+        
+        top.copy_from_slice(&body[..34 * 4]);
+        bottom.copy_from_slice(&body[31 * 34 * 4..]);
+    }
+
+    // Copy left and right borders
+    for i in 0..34 {
+        copy_pixel(buf, 0, i, 1, i);
+        copy_pixel(buf, 33, i, 32, i);
+    }
+}
 
 impl SpriteAtlas {
     pub fn new<F: Facade>(display: &F) -> SpriteAtlas {
@@ -21,7 +45,7 @@ impl SpriteAtlas {
         SpriteAtlas {
             texture: texture,
             sprites: HashMap::new(),
-            loading_buffer: vec![0; 32 * 32 * 4],
+            loading_buffer: vec![0; 34 * 34 * 4],
         }
     }
 
@@ -39,24 +63,29 @@ impl SpriteAtlas {
 
                 self.loading_buffer[..].copy_from_slice(EMPTY_SPRITE);
 
-                loader(&mut self.loading_buffer, 32 * 4);
+                // Load sprite at (1,1)
+                loader(&mut self.loading_buffer[35 * 4..], 34 * 4);
+        
+                // Store 1px border around the sprite to eliminate bilinear
+                // resampling errors
+                copy_borders(&mut self.loading_buffer);
 
                 let sprite = glium::texture::RawImage2d {
                     data: Cow::Borrowed(&self.loading_buffer),
-                    width: 32,
-                    height: 32,
+                    width: 34,
+                    height: 34,
                     format: glium::texture::ClientFormat::U8U8U8U8,
                 };
 
                 self.texture.write(glium::Rect {
                                        left: l as u32 * 34,
                                        bottom: b as u32 * 34,
-                                       width: 32,
-                                       height: 32,
+                                       width: 34,
+                                       height: 34,
                                    },
                                    sprite);
 
-                tex.insert([l as f32 * 34. / 2048., b as f32 * 34. / 2048.]).clone()
+                tex.insert([(l as f32 * 34. + 1.) / 2048., (b as f32 * 34. + 1.) / 2048.]).clone()
             }
         }
     }

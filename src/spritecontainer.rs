@@ -1,6 +1,4 @@
 use std::io;
-use glium;
-
 use helpers::ReadExt;
 
 pub struct SpriteContainer<R> {
@@ -10,11 +8,9 @@ pub struct SpriteContainer<R> {
     pub offsets: Vec<u32>,
 }
 
-pub type SpriteImage<'a> = glium::texture::RawImage2d<'a, u8>;
-
 // TODO:
-//  support for u16 num sprites
-//  autodetect u16/u32 based on signature
+//  Support for u16 num_sprites
+//  Autodetect u16/u32 based on file signature
 
 impl<R> SpriteContainer<R>
     where R: io::Read + io::Seek
@@ -51,13 +47,18 @@ impl<R> SpriteContainer<R>
         try!(self.f.read_byte());
 
         let mut size = try!(self.f.read_u16());
-        let mut p = 0;
+        let (mut p, mut i) = (0, 0);
+
+        let bytes_to_next_row = output_stride - 32 * 4;
 
         while size > 0 {
-            let transparent_pixels = try!(self.f.read_u16());
+            let transparent_pixels = try!(self.f.read_u16()) as usize;
             let pixels = try!(self.f.read_u16());
 
-            p += 4 * transparent_pixels as usize;
+            let rows_skipped = (i + transparent_pixels) / 32 - i / 32; 
+
+            i += transparent_pixels;
+            p += transparent_pixels * 4 + bytes_to_next_row * rows_skipped;
 
             for _ in 0..pixels {
                 try!(self.f.read(&mut output[p..p + 3]));
@@ -65,6 +66,11 @@ impl<R> SpriteContainer<R>
                 // Set alpha channel
                 output[p + 3] = 255;
                 p += 4;
+                i += 1;
+                
+                if i % 32 == 0 {
+                    p += bytes_to_next_row;
+                }
             }
 
             size -= 2 + 2 + pixels * 3;
