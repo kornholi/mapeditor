@@ -13,6 +13,9 @@ extern crate num;
 extern crate toml;
 extern crate vec_map;
 
+#[macro_use]
+extern crate serde_derive;
+
 mod datcontainer;
 mod helpers;
 mod map;
@@ -36,50 +39,43 @@ use rootwindow::RootWindow;
 use opentibia::itemtypes;
 use helpers::ReadExt;
 
-fn main() {
-    let mut input = String::new();
+#[derive(Deserialize)]
+struct Config {
+    spr: String,
+    dat: String,
+    otb: String,
+    map: String,
+}
 
+fn main() {
+    let mut raw_config = String::new();
     File::open("conf.toml")
-        .and_then(|mut f| f.read_to_string(&mut input))
+        .and_then(|mut f| f.read_to_string(&mut raw_config))
         .unwrap();
 
-    let mut parser = toml::Parser::new(&input);
-
-    let conf = match parser.parse() {
-        Some(value) => value,
-        None => {
-            println!("conf parsing failed:");
-
-            for err in &parser.errors {
-                let (loline, locol) = parser.to_linecol(err.lo);
-                let (hiline, hicol) = parser.to_linecol(err.hi);
-                println!("{}:{}-{}:{} error: {}",
-                         loline,
-                         locol,
-                         hiline,
-                         hicol,
-                         err.desc);
-            }
-
+    let config: Config = match toml::from_str(&raw_config) {
+        Ok(v) => v,
+        Err(e) => {
+            println!("Failed to load config: {}", e);
             return;
         }
     };
 
     // spr
-    let spr_data = std::io::BufReader::new(File::open(conf["spr"].as_str().unwrap()).unwrap());
+    let spr_data = std::io::BufReader::new(File::open(config.spr).unwrap());
     let spr = SpriteContainer::new(spr_data).unwrap();
 
     // dat
-    let mut data = std::io::BufReader::new(File::open(conf["dat"].as_str().unwrap()).unwrap());
+    let mut data = std::io::BufReader::new(File::open(config.dat).unwrap());
     let dat = DatContainer::new(&mut data).unwrap();
 
     // otb
-    let mut data = std::io::BufReader::new(File::open(conf["otb"].as_str().unwrap()).unwrap());
+    let mut data = std::io::BufReader::new(File::open(config.otb).unwrap());
     let _version = data.read_u32().unwrap();
     let otb = itemtypes::Container::new(&mut data).unwrap();
 
     // otbm
-    let mut data = std::io::BufReader::new(File::open(conf["map"].as_str().unwrap()).unwrap());
+    let mut data = std::io::BufReader::new(File::open(config.map).unwrap());
     let _version = data.read_u32().unwrap();
 
     // let node = Node::deserialize(&mut data, false).unwrap();
