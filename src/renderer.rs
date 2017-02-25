@@ -75,50 +75,47 @@ impl Renderer {
         println!("Rendering {} sectors took {}ms", sector_count, end - start);
     }
 
-    fn render_sector<F>(&self, sec: &map::Sector, sprite_callback: &mut F)
+    fn render_sector<F>(&self, sector: &map::Sector, mut sprite_callback: F)
         where F: FnMut((f32, f32), u32)
     {
-        let mut pos = 0u16;
-
-        // Must iterate with y
-        for tile in &sec.tiles {
-            let tile_x = sec.origin.x + pos / 32;
-            let tile_y = sec.origin.y + pos % 32;
-
+        for (pos, tile) in sector {
             let mut elevation = 0;
 
             for item in tile {
                 let otb_entry = &self.otb.items[item.id as usize];
 
-                if let Some(client_id) = otb_entry.client_id {
-                    let obj = &self.dat.items[(client_id - 100) as usize];
+                let client_id = match otb_entry.client_id {
+                    Some(v) => v,
+                    None => continue
+                };
 
-                    let pattern_x = tile_x as u16 % obj.pattern_width as u16;
-                    let pattern_y = tile_y as u16 % obj.pattern_height as u16;
+                let obj = &self.dat.items[(client_id - 100) as usize];
 
-                    for layer in 0..obj.layers {
-                        for y in 0..obj.height {
-                            for x in 0..obj.width {
-                                let spr_idx = get_sprite_id(obj, layer, pattern_x, pattern_y, x, y);
-                                let spr_id = obj.sprite_ids[spr_idx] as u32;
+                let pattern_x = pos.x % obj.pattern_width as u16;
+                let pattern_y = pos.y % obj.pattern_height as u16;
 
-                                if spr_id != 0 {
-                                    let obj_x = tile_x as f32 - x as f32 -
-                                                (obj.displacement.0 + elevation) as f32 / 32.;
-                                    let obj_y = tile_y as f32 - y as f32 -
-                                                (obj.displacement.1 + elevation) as f32 / 32.;
+                for layer in 0..obj.layers {
+                    for y in 0..obj.height {
+                        for x in 0..obj.width {
+                            let spr_idx = get_sprite_id(obj, layer, pattern_x, pattern_y, x, y);
+                            let spr_id = obj.sprite_ids[spr_idx] as u32;
 
-                                    sprite_callback((obj_x, obj_y), spr_id);
-                                }
+                            if spr_id == 0 {
+                                continue;
                             }
+
+                            let obj_x = pos.x as f32 - x as f32 -
+                                        (obj.displacement.0 + elevation) as f32 / 32.;
+                            let obj_y = pos.y as f32 - y as f32 -
+                                        (obj.displacement.1 + elevation) as f32 / 32.;
+
+                            sprite_callback((obj_x, obj_y), spr_id);
                         }
                     }
-
-                    elevation += obj.elevation;
                 }
-            }
 
-            pos += 1;
+                elevation += obj.elevation;
+            }
         }
     }
 }
