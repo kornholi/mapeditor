@@ -62,26 +62,26 @@ impl Container {
     pub fn new<R>(mut r: R) -> io::Result<Container>
         where R: io::Read
     {
-        let root_node = try!(binaryfile::Node::deserialize(&mut r, false));
+        let root_node = binaryfile::Node::deserialize(&mut r, false)?;
         let mut data = &root_node.data[..];
 
         let mut container = Container { ..Default::default() };
 
         // currently not being used
-        container.flags = try!(data.read_u32());
+        container.flags = data.read_u32()?;
 
-        let attr = try!(data.read_byte());
+        let attr = data.read_byte()?;
         if attr == 1 {
-            let datalen = try!(data.read_u16());
+            let datalen = data.read_u16()?;
             assert!(datalen == 140);
 
-            let major_version = try!(data.read_u32());
-            let minor_version = try!(data.read_u32());
-            let build = try!(data.read_u32());
+            let major_version = data.read_u32()?;
+            let minor_version = data.read_u32()?;
+            let build = data.read_u32()?;
 
             container.version = (major_version, minor_version, build);
 
-            let mut desc = try!(data.read_fixed_string(128));
+            let mut desc = data.read_fixed_string(128)?;
 
             if let Some(end) = desc.find('\0') {
                 desc.truncate(end);
@@ -94,18 +94,18 @@ impl Container {
             let mut item = Item { ..Default::default() };
 
             let mut data = &item_node.data[..];
-            let _flags = try!(data.read_u32());
+            let _flags = data.read_u32()?;
 
             while !data.is_empty() {
                 use self::AttributeKind::*;
 
-                let kind = AttributeKind::from_u8(try!(data.read_byte()))
+                let kind = AttributeKind::from_u8(data.read_byte()?)
                     .expect("unknown map node");
-                let len = try!(data.read_u16());
+                let len = data.read_u16()?;
 
                 match kind {
-                    ServerId => item.server_id = try!(data.read_u16()),
-                    ClientId => item.client_id = Some(try!(data.read_u16())),
+                    ServerId => item.server_id = data.read_u16()?,
+                    ClientId => item.client_id = Some(data.read_u16()?),
 
                     _ => data = &data[len as usize..],
                 }

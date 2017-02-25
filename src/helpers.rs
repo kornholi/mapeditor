@@ -4,6 +4,8 @@ use byteorder::{ReadBytesExt, LittleEndian};
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1252;
 
+use opentibia::Position;
+
 pub trait ReadExt: io::Read {
     fn read_byte(&mut self) -> Result<u8> {
         ReadBytesExt::read_u8(self)
@@ -30,16 +32,20 @@ pub trait ReadExt: io::Read {
     }
 
     fn read_string(&mut self) -> Result<String> {
-        let length = try!(self.read_u16()) as usize;
+        let length = self.read_u16()? as usize;
         self.read_fixed_string(length)
     }
 
     fn read_fixed_string(&mut self, length: usize) -> Result<String> {
         let mut data = vec![0; length];
-        try!(self.read_exact(&mut data));
+        self.read_exact(&mut data)?;
 
         // FIXME: error handling
         Ok(WINDOWS_1252.decode(&data, DecoderTrap::Strict).unwrap())
+    }
+
+    fn read_position(&mut self) -> Result<Position> {
+        Position::deserialize(self)
     }
 }
 

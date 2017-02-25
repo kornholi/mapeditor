@@ -16,13 +16,13 @@ impl<R> SpriteContainer<R>
     where R: io::Read + io::Seek
 {
     pub fn new(mut r: R) -> io::Result<SpriteContainer<R>> {
-        let signature = try!(r.read_u32());
-        let num_sprites = try!(r.read_u32());
+        let signature = r.read_u32()?;
+        let num_sprites = r.read_u32()?;
 
         let mut offsets = Vec::with_capacity(num_sprites as usize);
 
         for _ in 0..num_sprites {
-            offsets.push(try!(r.read_u32()));
+            offsets.push(r.read_u32()?);
         }
 
         Ok(SpriteContainer {
@@ -39,21 +39,21 @@ impl<R> SpriteContainer<R>
                       output_stride: usize)
                       -> io::Result<()> {
         let offset = self.offsets[idx as usize - 1];
-        try!(self.f.seek(io::SeekFrom::Start(offset as u64)));
+        self.f.seek(io::SeekFrom::Start(offset as u64))?;
 
         // RGB color key (typically magenta)
-        try!(self.f.read_byte());
-        try!(self.f.read_byte());
-        try!(self.f.read_byte());
+        self.f.read_byte()?;
+        self.f.read_byte()?;
+        self.f.read_byte()?;
 
-        let mut size = try!(self.f.read_u16());
+        let mut size = self.f.read_u16()?;
         let (mut p, mut i) = (0, 0);
 
         let bytes_to_next_row = output_stride - 32 * 4;
 
         while size > 0 {
-            let transparent_pixels = try!(self.f.read_u16()) as usize;
-            let pixels = try!(self.f.read_u16());
+            let transparent_pixels = self.f.read_u16()? as usize;
+            let pixels = self.f.read_u16()?;
 
             let rows_skipped = (i + transparent_pixels) / 32 - i / 32; 
 
@@ -61,7 +61,7 @@ impl<R> SpriteContainer<R>
             p += transparent_pixels * 4 + bytes_to_next_row * rows_skipped;
 
             for _ in 0..pixels {
-                try!(self.f.read(&mut output[p..p + 3]));
+                self.f.read(&mut output[p..p + 3])?;
 
                 // Set alpha channel
                 output[p + 3] = 255;

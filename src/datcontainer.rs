@@ -78,7 +78,7 @@ impl Thing {
 
         loop {
             // TODO: return custom error
-            let raw_attr = try!(r.read_byte());
+            let raw_attr = r.read_byte()?;
             let attr = Attribute::from_u8(raw_attr)
                 .expect(&format!("unknown attribute {}", raw_attr));
 
@@ -89,37 +89,37 @@ impl Thing {
                     End => break,
 
                     Ground | Writable | WritableOnce => {
-                        let _speed = try!(r.read_u16());
+                        let _speed = r.read_u16()?;
                     }
 
                     Light => {
-                        let _intensity = try!(r.read_u16());
-                        let _color = try!(r.read_u16());
+                        let _intensity = r.read_u16()?;
+                        let _color = r.read_u16()?;
                     }
 
                     Displacement => {
-                        let x = try!(r.read_u16());
-                        let y = try!(r.read_u16());
+                        let x = r.read_u16()?;
+                        let y = r.read_u16()?;
 
                         displacement = (x, y);
                     }
 
                     Elevation => {
-                        elevation = try!(r.read_u16());
+                        elevation = r.read_u16()?;
                     }
 
                     DefaultAction | MinimapColor | Cloth | LensHelp => {
-                        try!(r.read_u16());
+                        r.read_u16()?;
                     }
 
                     Market => {
-                        let _category = try!(r.read_u16());
-                        let _trade_id = try!(r.read_u16());
-                        let _show_id = try!(r.read_u16());
-                        let _name = try!(r.read_string());
+                        let _category = r.read_u16()?;
+                        let _trade_id = r.read_u16()?;
+                        let _show_id = r.read_u16()?;
+                        let _name = r.read_string()?;
 
-                        let _voc = try!(r.read_u16());
-                        let _level = try!(r.read_u16());
+                        let _voc = r.read_u16()?;
+                        let _level = r.read_u16()?;
                     }
 
                     _ => {}
@@ -127,28 +127,28 @@ impl Thing {
             }
         }
 
-        let width = try!(r.read_byte());
-        let height = try!(r.read_byte());
+        let width = r.read_byte()?;
+        let height = r.read_byte()?;
 
         if width > 1 || height > 1 {
-            try!(r.read_byte());
+            r.read_byte()?;
         }
 
-        let layers = try!(r.read_byte());
-        let pattern_width = try!(r.read_byte());
-        let pattern_height = try!(r.read_byte());
-        let pattern_depth = try!(r.read_byte());
+        let layers = r.read_byte()?;
+        let pattern_width = r.read_byte()?;
+        let pattern_height = r.read_byte()?;
+        let pattern_depth = r.read_byte()?;
 
-        let animation_length = try!(r.read_byte());
+        let animation_length = r.read_byte()?;
 
         if animation_length > 1 {
-            let _async = try!(r.read_byte()) == 0;
-            let _loop_count = try!(r.read_i32());
-            let _start_phase = try!(r.read_byte());
+            let _async = r.read_byte()? == 0;
+            let _loop_count = r.read_i32()?;
+            let _start_phase = r.read_byte()?;
 
             for _ in 0..animation_length {
-                let _min = try!(r.read_u32());
-                let _max = try!(r.read_u32());
+                let _min = r.read_u32()?;
+                let _max = r.read_u32()?;
             }
         }
 
@@ -159,8 +159,7 @@ impl Thing {
         let mut sprite_ids = Vec::with_capacity(sprite_count as usize);
 
         for _ in 0..sprite_count {
-            let id = try!(r.read_u32());
-            sprite_ids.push(id);
+            sprite_ids.push(r.read_u32()?);
         }
 
         Ok(Thing {
@@ -182,20 +181,18 @@ impl Thing {
 
 impl DatContainer {
     pub fn new(r: &mut io::Read) -> io::Result<DatContainer> {
-        let signature = try!(r.read_u32());
+        let signature = r.read_u32()?;
 
-        let num_items = try!(r.read_u16());
-        let _num_creatures = try!(r.read_u16());
-        let _num_magic_effects = try!(r.read_u16());
-        let _num_distance_effects = try!(r.read_u16());
+        let num_items = r.read_u16()?;
+        let _num_creatures = r.read_u16()?;
+        let _num_magic_effects = r.read_u16()?;
+        let _num_distance_effects = r.read_u16()?;
 
         let mut client_id = 100;
         let mut items = Vec::with_capacity((num_items - client_id) as usize);
 
         while client_id <= num_items {
-            let thing = try!(Thing::deserialize(r));
-            items.push(thing);
-
+            items.push(Thing::deserialize(r)?);
             client_id += 1;
         }
 

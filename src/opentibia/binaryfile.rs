@@ -15,25 +15,25 @@ impl Node {
 
     pub fn deserialize(r: &mut io::Read, skip_start: bool) -> io::Result<Node> {
         if !skip_start {
-            let data = try!(r.read_byte());
+            let data = r.read_byte()?;
 
             if data != Node::START {
                 return Err(io::Error::new(io::ErrorKind::InvalidInput, "expected start of a node"));
             }
         }
 
-        let kind = try!(r.read_byte());
+        let kind = r.read_byte()?;
 
         let mut data = Vec::new();
         let mut children = Vec::new();
 
         loop {
-            let b = try!(r.read_byte());
+            let b = r.read_byte()?;
 
             match b {
-                Node::START => children.push(try!(Node::deserialize(r, true))),
+                Node::START => children.push(Node::deserialize(r, true)?),
                 Node::END => break,
-                Node::ESCAPE => data.push(try!(r.read_byte())),
+                Node::ESCAPE => data.push(r.read_byte()?),
                 _ => data.push(b),
             }
         }
@@ -54,14 +54,14 @@ pub fn streaming_parser<R, F>(mut r: R, skip_start: bool, mut callback: F) -> io
           R: io::Read
 {
     if !skip_start {
-        let data = try!(r.read_byte());
+        let data = r.read_byte()?;
 
         if data != Node::START {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "expected start of a node"));
         }
     }
 
-    let mut kind = try!(r.read_byte());
+    let mut kind = r.read_byte()?;
     let mut data = Vec::new();
 
     loop {
@@ -70,7 +70,7 @@ pub fn streaming_parser<R, F>(mut r: R, skip_start: bool, mut callback: F) -> io
             Err(ref a) if a.kind() == io::ErrorKind::UnexpectedEof => {
                 // The last node is not yet processed at this point.
                 // We don't care about the result since this is at EOF
-                try!(callback(kind, &data));
+                callback(kind, &data)?;
                 return Ok(());
             }
             Err(err) => return Err(err),
@@ -78,7 +78,7 @@ pub fn streaming_parser<R, F>(mut r: R, skip_start: bool, mut callback: F) -> io
 
         match b {
             Node::START => {
-                let callback_result = try!(callback(kind, &data));
+                let callback_result = callback(kind, &data)?;
                 data.clear();
 
                 // Stop parsing if callback returned false
@@ -86,11 +86,11 @@ pub fn streaming_parser<R, F>(mut r: R, skip_start: bool, mut callback: F) -> io
                     return Ok(());
                 }
 
-                kind = try!(r.read_byte());
+                kind = r.read_byte()?;
             }
 
             Node::END => (),
-            Node::ESCAPE => data.push(try!(r.read_byte())),
+            Node::ESCAPE => data.push(r.read_byte()?),
             _ => data.push(b),
         }
     }
