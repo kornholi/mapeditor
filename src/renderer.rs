@@ -45,8 +45,8 @@ impl<V> Renderer<V> {
     }
 
     pub fn get_visible_sectors(&self, ul: (i32, i32), size: (u16, u16)) -> Vec<Position> {
-        let (u, l) = (cmp::max(ul.0, 0) as u16, cmp::max(ul.1, 0) as u16);
         let (w, h) = size;
+        let (u, l) = (cmp::max(ul.0 - (w / 2) as i32, 0) as u16, cmp::max(ul.1 - (h / 2) as i32, 0) as u16);
 
         let w_ceil = w + map::Sector::SIZE - 1;
         let h_ceil = h + map::Sector::SIZE - 1;

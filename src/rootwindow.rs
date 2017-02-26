@@ -108,10 +108,10 @@ impl RootWindow {
         self.scaling_factor = 1.33_f32.powi(self.zoom_level);
 
         let (w, h) = self.dimensions;
-        let (w, h) = (w * self.scaling_factor, h * self.scaling_factor);
+        let (w, h) = (w * self.scaling_factor / 2., h * self.scaling_factor / 2.);
         let ul = self.ul_offset;
 
-        self.ortho_matrix = cgmath::ortho(ul.0, ul.0 + w, ul.1 + h, ul.1, -1.0, 1.0);
+        self.ortho_matrix = cgmath::ortho(ul.0 - w, ul.0 + w, ul.1 + h, ul.1 - h, -1.0, 1.0);
 
         if !self.dragging {
             self.upload_vertices();
