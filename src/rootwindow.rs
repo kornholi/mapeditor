@@ -44,8 +44,8 @@ pub struct RootWindow {
     scaling_factor: f32,
     ul_offset: (f32, f32),
 
+    last_mouse_position: Option<(i32, i32)>,
     dragging: bool,
-    dragging_position: Option<(i32, i32)>,
 }
 
 impl RootWindow {
@@ -94,8 +94,8 @@ impl RootWindow {
             scaling_factor: 1.0,
             ul_offset: (80. * 32., 110. * 32.0),
 
+            last_mouse_position: None,
             dragging: false,
-            dragging_position: None,
         }
     }
 
@@ -104,14 +104,18 @@ impl RootWindow {
         self.calculate_projection();
     }
 
+    fn get_zooming_factor(&self) -> f32 {
+        1.33_f32.powi(self.zoom_level)
+    }
+
     fn calculate_projection(&mut self) {
-        self.scaling_factor = 1.33_f32.powi(self.zoom_level);
+        self.scaling_factor = self.get_zooming_factor();
 
         let (w, h) = self.dimensions;
-        let (w, h) = (w * self.scaling_factor / 2., h * self.scaling_factor / 2.);
+        let (w, h) = (w * self.scaling_factor, h * self.scaling_factor);
         let ul = self.ul_offset;
 
-        self.ortho_matrix = cgmath::ortho(ul.0 - w, ul.0 + w, ul.1 + h, ul.1 - h, -1.0, 1.0);
+        self.ortho_matrix = cgmath::ortho(ul.0, ul.0 + w, ul.1 + h, ul.1, -1.0, 1.0);
 
         if !self.dragging {
             self.upload_vertices();
@@ -185,7 +189,7 @@ impl RootWindow {
         while let Some(event) = self.display.poll_events().next() {
             use glium::glutin::Event::*;
             use glium::glutin::{MouseButton, MouseScrollDelta};
-            // println!("ev: {:?}", event);
+            //println!("ev: {:?}", event);
 
             match event {
                 Closed => return Action::Stop,
@@ -194,7 +198,7 @@ impl RootWindow {
 
                 MouseMoved(x, y) => {
                     if self.dragging {
-                        if let Some((prev_x, prev_y)) = self.dragging_position {
+                        if let Some((prev_x, prev_y)) = self.last_mouse_position {
                             let offset = (prev_x - x, prev_y - y);
 
                             self.ul_offset.0 += offset.0 as f32 * self.scaling_factor;
@@ -202,9 +206,9 @@ impl RootWindow {
 
                             self.calculate_projection();
                         }
-
-                        self.dragging_position = Some((x, y));
                     }
+                    
+                    self.last_mouse_position = Some((x, y));
                 }
 
                 MouseInput(state, MouseButton::Middle) |
@@ -215,23 +219,32 @@ impl RootWindow {
                         Pressed => self.dragging = true,
                         Released => {
                             self.dragging = false;
-                            self.dragging_position = None;
 
-                            self.calculate_projection();
+                            self.calculate_projection(); // FIXME: get rid of this
                         }
                     }
                 }
 
                 // FIXME: Support PixelDelta
-                // FIXME: Zoom at mouse position not UL
                 MouseWheel(MouseScrollDelta::LineDelta(_, v), _) => {
                     self.zoom_level = cmp::max(-4, self.zoom_level - v as i32);
+
+                    // Keep mouse over the same world position after zooming
+                    if let Some((prev_x, prev_y)) = self.last_mouse_position {
+                        let new_scaling_factor = self.get_zooming_factor();
+
+                        let shift_x = (prev_x as f32) * (self.scaling_factor - new_scaling_factor);
+                        let shift_y = (prev_y as f32) * (self.scaling_factor - new_scaling_factor);
+
+                        self.ul_offset.0 += shift_x;
+                        self.ul_offset.1 += shift_y;
+                    }
+
                     self.calculate_projection();
                 }
 
-                Focused(false) => {
+                MouseLeft => {
                     self.dragging = false;
-                    self.dragging_position = None;
                 }
 
                 _ => (),
