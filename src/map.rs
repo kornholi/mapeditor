@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 
 use opentibia::Position;
 use opentibia::map::Item;
@@ -20,38 +21,22 @@ impl Map {
     }
 
     pub fn get(&self, pos: &Position) -> Option<&Sector> {
-        let sector_pos = Position {
-            x: pos.x & !31,
-            y: pos.y & !31,
-            z: pos.z,
-        };
-
+        let sector_pos = Sector::get_sector_pos(pos); 
         self.sectors.get(&sector_pos)
     }
 
     pub fn get_mut(&mut self, pos: &Position) -> Option<&mut Sector> {
-        let sector_pos = Position {
-            x: pos.x & !31,
-            y: pos.y & !31,
-            z: pos.z,
-        };
-
+        let sector_pos = Sector::get_sector_pos(pos); 
         self.sectors.get_mut(&sector_pos)
     }
 
     pub fn get_or_create(&mut self, pos: &Position) -> &mut Sector {
-        let sector_pos = Position {
-            x: pos.x & !31,
-            y: pos.y & !31,
-            z: pos.z,
-        };
+        let sector_pos = Sector::get_sector_pos(pos);
 
-        if !self.sectors.contains_key(&sector_pos) {
-            let sec = Sector::new(sector_pos);
-            self.sectors.insert(sector_pos, sec);
+        match self.sectors.entry(sector_pos) {
+            Entry::Occupied(o) => o.into_mut(),
+            Entry::Vacant(v) => v.insert(Sector::new(sector_pos))
         }
-
-        self.sectors.get_mut(&sector_pos).expect("impossible")
     }
 }
 
@@ -69,6 +54,14 @@ impl Sector {
         Sector {
             origin: origin,
             tiles: tiles,
+        }
+    }
+    
+    fn get_sector_pos(pos: &Position) -> Position {
+        Position {
+            x: pos.x & !(Sector::SIZE - 1),
+            y: pos.y & !(Sector::SIZE - 1),
+            z: pos.z,
         }
     }
 
