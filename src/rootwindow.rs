@@ -29,14 +29,13 @@ enum Action {
 pub struct RootWindow {
     display: glium::backend::glutin_backend::GlutinFacade,
 
-    renderer: Renderer,
+    renderer: Renderer<Vertex>,
     spr: SpriteContainer<io::BufReader<fs::File>>,
     spr_atlas: SpriteAtlas,
 
     ortho_matrix: cgmath::Matrix4<f32>,
     program: glium::Program,
 
-    temp_buffer: Vec<Vertex>,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     vertex_buffer_len: usize,
 
@@ -51,10 +50,10 @@ pub struct RootWindow {
 
 impl RootWindow {
     pub fn new(display: glium::backend::glutin_backend::GlutinFacade,
-               renderer: Renderer,
+               renderer: Renderer<Vertex>,
                spr: SpriteContainer<io::BufReader<fs::File>>)
                -> RootWindow {
-        let vertex_buffer = glium::VertexBuffer::empty(&display, 1 << 24)
+        let vertex_buffer = glium::VertexBuffer::empty_persistent(&display, 1 << 24)
             .expect("VBO creation failed");
 
         // {
@@ -85,7 +84,6 @@ impl RootWindow {
             display: display,
             program: program,
 
-            temp_buffer: Vec::new(),
             vertex_buffer: vertex_buffer,
             vertex_buffer_len: 0,
 
@@ -115,6 +113,16 @@ impl RootWindow {
 
         self.ortho_matrix = cgmath::ortho(ul.0, ul.0 + w, ul.1 + h, ul.1, -1.0, 1.0);
 
+        if !self.dragging {
+            self.upload_vertices();
+        }
+    }
+
+    fn upload_vertices(&mut self) {
+        let (w, h) = self.dimensions;
+        let (w, h) = (w * self.scaling_factor, h * self.scaling_factor);
+        let ul = self.ul_offset;
+
         // FIXME FIXME FIXME FIXME
         let (w, h) = (w / 32., h / 32.);
         let (w, h) = (w.ceil() as u16, h.ceil() as u16);
@@ -124,19 +132,48 @@ impl RootWindow {
 
         let spr = &mut self.spr;
         let atlas = &mut self.spr_atlas;
-        let out = &mut self.temp_buffer;
 
-        self.renderer.resize((u, l), (w, h), |(x, y), sprite_id| {
+        let vis = self.renderer.get_visible_sectors((u, l), (w, h));
+
+        let mut sprite_callback = |(x, y), sprite_id| {
             let tex_pos = atlas.get_or_load(sprite_id, |buf, stride| {
                 spr.get_sprite(sprite_id, buf, stride).expect("failed to load sprite")
             });
 
-            out.push(Vertex {
+            Vertex {
                 position: [x, y, 7.],
                 color: [1.0, 1.0, 1.0, 1.0],
                 tex_coord: tex_pos,
-            });
-        });
+            }
+        };
+
+        let start = clock_ticks::precise_time_ms();
+        let mut vbo_offset = 0;
+
+        self.vertex_buffer.invalidate();
+
+        for sector_pos in &vis {
+            let vertices = self.renderer.get_sector_vertices(sector_pos.clone(), &mut sprite_callback);
+
+            if let Some(vertices) = vertices {
+                if vertices.len() == 0 {
+                    continue;
+                }
+
+                if vbo_offset + vertices.len() > self.vertex_buffer.len() {
+                    println!("warning: ran out of VBO space after {}", vbo_offset);
+                    break;
+                }
+
+                self.vertex_buffer.slice(vbo_offset..vbo_offset + vertices.len()).unwrap().write(&vertices);
+                vbo_offset += vertices.len();
+            }
+        }
+
+        self.vertex_buffer_len = vbo_offset;
+
+        let end = clock_ticks::precise_time_ms();
+        println!("Rendering {} sectors took {}ms - {} vertices", vis.len(), end - start, vbo_offset);
     }
 
     pub fn run(&mut self) {
@@ -179,6 +216,8 @@ impl RootWindow {
                         Released => {
                             self.dragging = false;
                             self.dragging_position = None;
+
+                            self.calculate_projection();
                         }
                     }
                 }
@@ -198,27 +237,8 @@ impl RootWindow {
                 _ => (),
             }
         }
-
-        if !self.temp_buffer.is_empty() {
-            let data = &mut self.temp_buffer;
-
-            let n = cmp::min(data.len(), self.vertex_buffer.len());
-            if data.len() > self.vertex_buffer.len() {
-                println!("warning: rendered {} sprites but can only fit {}", data.len(), self.vertex_buffer.len());
-            }
-
-            let start = clock_ticks::precise_time_ms();
-            self.vertex_buffer.slice(..n).unwrap().write(&data[..n]);
-            self.vertex_buffer_len = n;
-            let end = clock_ticks::precise_time_ms();
-
-            println!("VBO upload took {}ms", end - start);
-            data.clear();
-        }
-
         let ortho_matrix: &[[f32; 4]; 4] = self.ortho_matrix.as_ref();
 
-        // building the uniforms
         let uniforms = uniform! {
             matrix: *ortho_matrix,
             tex: self.spr_atlas.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear)
@@ -230,12 +250,16 @@ impl RootWindow {
         // drawing a frame
         let mut target = self.display.draw();
         target.clear_color(0.5, 0.5, 0.5, 1.0);
-        target.draw(self.vertex_buffer.slice(0..self.vertex_buffer_len).unwrap(),
+
+        if self.vertex_buffer_len > 0 {
+            target.draw(self.vertex_buffer.slice(0..self.vertex_buffer_len).unwrap(),
                   NoIndices(PrimitiveType::Points),
                   &self.program,
                   &uniforms,
                   &draw_params)
             .unwrap();
+        }
+
         target.finish().unwrap();
 
         Action::Continue

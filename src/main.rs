@@ -12,6 +12,7 @@ extern crate image;
 extern crate num;
 extern crate toml;
 extern crate vec_map;
+extern crate lru_cache;
 
 #[macro_use]
 extern crate serde_derive;
@@ -109,15 +110,7 @@ fn main() {
         .build_glium()
         .unwrap();
 
-    let rend = Renderer {
-        dat: dat,
-        otb: otb,
-
-        map: map,
-
-        bounds: (0, 0, 0, 0),
-    };
-
+    let rend = Renderer::<rootwindow::Vertex>::new(dat, otb, map);
     let mut root = RootWindow::new(display, rend, spr);
 
     root.resize(1100, 1100);

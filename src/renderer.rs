@@ -1,18 +1,20 @@
 use std::cmp;
 use clock_ticks;
 
+use lru_cache::LruCache;
+
 use datcontainer;
 use datcontainer::DatContainer;
 use opentibia::{itemtypes, Position};
 
 use super::map;
 
-pub struct Renderer {
+pub struct Renderer<V> {
     pub dat: DatContainer,
     pub otb: itemtypes::Container,
-
     pub map: map::Map,
-    pub bounds: (u16, u16, u16, u16),
+
+    sector_cache: LruCache<Position, Vec<V>>,
 }
 
 fn get_sprite_id(obj: &datcontainer::Thing,
@@ -31,48 +33,54 @@ fn get_sprite_id(obj: &datcontainer::Thing,
     obj.sprite_ids.len()
 }
 
-impl Renderer {
-    pub fn resize<F>(&mut self, ul: (i32, i32), size: (u16, u16), mut sprite_callback: F)
-        where F: FnMut((f32, f32), u32)
-    {
+impl<V> Renderer<V> {
+    pub fn new(dat: DatContainer, otb: itemtypes::Container, map: map::Map) -> Renderer<V> {
+        Renderer {
+            dat: dat,
+            otb: otb,
+            map: map,
+
+            sector_cache: LruCache::new(512)
+        }
+    }
+
+    pub fn get_visible_sectors(&self, ul: (i32, i32), size: (u16, u16)) -> Vec<Position> {
         let (u, l) = (cmp::max(ul.0, 0) as u16, cmp::max(ul.1, 0) as u16);
         let (w, h) = size;
 
-        let br = ((u + w), (l + h));
-        let bnd = self.bounds;
+        let w_ceil = w + map::Sector::SIZE - 1;
+        let h_ceil = h + map::Sector::SIZE - 1;
+        let num_sectors = w_ceil as usize * h_ceil as usize / map::Sector::SIZE as usize;
 
-        if u < bnd.0 || l < bnd.1 || br.0 > bnd.2 || br.1 > bnd.3 {
-            println!("resize {:?} {:?} bnd {:?}", ul, size, bnd);
-        } else {
-            return;
-        }
+        let mut sectors = Vec::with_capacity(num_sectors);
 
-        // FIXME FIXME FIXME FIXME
-        self.bounds = (u & !31,
-                       l & !31,
-                       ((u + 31) & !31) + (w + 31) & !31,
-                       ((l + 31) & !31) + (h + 31) & !31);
-
-        let start = clock_ticks::precise_time_ms();
-        let mut sector_count = 0;
-
-        for x in (0..w + 31).step_by(map::Sector::SIZE) {
-            for y in (0..h + 31).step_by(map::Sector::SIZE) {
-                let sec = self.map.get(&Position {
+        for x in (0..w_ceil).step_by(map::Sector::SIZE) {
+            for y in (0..h_ceil).step_by(map::Sector::SIZE) {
+                sectors.push(Position {
                     x: u + x,
                     y: l + y,
                     z: 7,
                 });
-
-                if let Some(sec) = sec {
-                    self.render_sector(&sec, &mut sprite_callback);
-                    sector_count += 1;
-                }
             }
         }
 
-        let end = clock_ticks::precise_time_ms();
-        println!("Rendering {} sectors took {}ms", sector_count, end - start);
+        sectors
+    }
+
+    pub fn get_sector_vertices<'a, F>(&'a mut self, sector_pos: Position, mut sprite_callback: F) -> Option<&'a [V]>
+        where F: FnMut((f32, f32), u32) -> V
+    {
+        if !self.sector_cache.contains_key(&sector_pos) {
+            if let Some(s) = self.map.get(&sector_pos) {
+                let mut vertices = Vec::new();
+                self.render_sector(s, |(x, y), id| vertices.push(sprite_callback((x, y), id)));
+                self.sector_cache.insert(sector_pos.clone(), vertices);
+            } else {
+                return None;
+            }
+        }
+
+        Some(self.sector_cache.get_mut(&sector_pos).unwrap())
     }
 
     fn render_sector<F>(&self, sector: &map::Sector, mut sprite_callback: F)
