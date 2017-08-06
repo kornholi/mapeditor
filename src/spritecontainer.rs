@@ -55,19 +55,19 @@ impl<R> SpriteContainer<R>
             let transparent_pixels = self.f.read_u16()? as usize;
             let pixels = self.f.read_u16()?;
 
-            let rows_skipped = (i + transparent_pixels) / 32 - i / 32; 
+            let rows_skipped = (i + transparent_pixels) / 32 - i / 32;
 
             i += transparent_pixels;
             p += transparent_pixels * 4 + bytes_to_next_row * rows_skipped;
 
             for _ in 0..pixels {
-                self.f.read(&mut output[p..p + 3])?;
+                self.f.read_exact(&mut output[p..p + 3])?;
 
                 // Set alpha channel
                 output[p + 3] = 255;
                 p += 4;
                 i += 1;
-                
+
                 if i % 32 == 0 {
                     p += bytes_to_next_row;
                 }

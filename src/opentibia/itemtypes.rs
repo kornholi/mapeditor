@@ -36,7 +36,7 @@ enum AttributeKind {
     Ammunition2, //deprecated
     Armor2, //deprecated
     Writeable2, //deprecated
-    Light2, 
+    Light2,
     TopOrder,
     Writeable3, //deprecated
 
@@ -73,7 +73,7 @@ impl Container {
         let attr = data.read_byte()?;
         if attr == 1 {
             let datalen = data.read_u16()?;
-            assert!(datalen == 140);
+            assert_eq!(datalen, 140);
 
             let major_version = data.read_u32()?;
             let minor_version = data.read_u32()?;

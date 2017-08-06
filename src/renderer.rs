@@ -53,8 +53,8 @@ impl<V> Renderer<V> {
 
         let mut sectors = Vec::with_capacity(num_sectors);
 
-        for x in (0..w_ceil).step_by(map::Sector::SIZE) {
-            for y in (0..h_ceil).step_by(map::Sector::SIZE) {
+        for x in (0..w_ceil).step_by(map::Sector::SIZE as usize) {
+            for y in (0..h_ceil).step_by(map::Sector::SIZE as usize) {
                 sectors.push(Position {
                     x: u + x,
                     y: l + y,
@@ -66,14 +66,14 @@ impl<V> Renderer<V> {
         sectors
     }
 
-    pub fn get_sector_vertices<'a, F>(&'a mut self, sector_pos: Position, mut sprite_callback: F) -> Option<&'a [V]>
+    pub fn get_sector_vertices<F>(&mut self, sector_pos: Position, mut sprite_callback: F) -> Option<&[V]>
         where F: FnMut((f32, f32), u32) -> V
     {
         if !self.sector_cache.contains_key(&sector_pos) {
             if let Some(s) = self.map.get(&sector_pos) {
                 let mut vertices = Vec::new();
                 self.render_sector(s, |(x, y), id| vertices.push(sprite_callback((x, y), id)));
-                self.sector_cache.insert(sector_pos.clone(), vertices);
+                self.sector_cache.insert(sector_pos, vertices);
             } else {
                 return None;
             }

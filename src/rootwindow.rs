@@ -27,7 +27,7 @@ enum Action {
 }
 
 pub struct RootWindow {
-    display: glium::backend::glutin_backend::GlutinFacade,
+    display: glium::backend::glutin::Display,
 
     renderer: Renderer<Vertex>,
     spr: SpriteContainer<io::BufReader<fs::File>>,
@@ -44,12 +44,12 @@ pub struct RootWindow {
     scaling_factor: f32,
     ul_offset: (f32, f32),
 
-    last_mouse_position: Option<(i32, i32)>,
+    last_mouse_position: Option<(f64, f64)>,
     dragging: bool,
 }
 
 impl RootWindow {
-    pub fn new(display: glium::backend::glutin_backend::GlutinFacade,
+    pub fn new(display: glium::backend::glutin::Display,
                renderer: Renderer<Vertex>,
                spr: SpriteContainer<io::BufReader<fs::File>>)
                -> RootWindow {
@@ -157,10 +157,10 @@ impl RootWindow {
         self.vertex_buffer.invalidate();
 
         for sector_pos in &vis {
-            let vertices = self.renderer.get_sector_vertices(sector_pos.clone(), &mut sprite_callback);
+            let vertices = self.renderer.get_sector_vertices(*sector_pos, &mut sprite_callback);
 
             if let Some(vertices) = vertices {
-                if vertices.len() == 0 {
+                if vertices.is_empty() {
                     continue;
                 }
 
@@ -169,7 +169,7 @@ impl RootWindow {
                     break;
                 }
 
-                self.vertex_buffer.slice(vbo_offset..vbo_offset + vertices.len()).unwrap().write(&vertices);
+                self.vertex_buffer.slice(vbo_offset..vbo_offset + vertices.len()).unwrap().write(vertices);
                 vbo_offset += vertices.len();
             }
         }
@@ -180,23 +180,31 @@ impl RootWindow {
         println!("Rendering {} sectors took {}ms - {} vertices", vis.len(), end - start, vbo_offset);
     }
 
-    pub fn run(&mut self) {
-        start_loop(|| self.loop_callback());
+    pub fn run(&mut self, event_loop: &mut glium::glutin::EventsLoop) {
+        start_loop(|| self.loop_callback(event_loop));
     }
 
-    fn loop_callback(&mut self) -> Action {
+    fn loop_callback(&mut self, event_loop: &mut glium::glutin::EventsLoop) -> Action {
+        let mut stop = false;
+
         // Polling and handling the events received by the window
-        while let Some(event) = self.display.poll_events().next() {
-            use glium::glutin::Event::*;
+        event_loop.poll_events(|event| {
+            use glium::glutin::Event;
+            use glium::glutin::WindowEvent::*;
             use glium::glutin::{MouseButton, MouseScrollDelta};
             //println!("ev: {:?}", event);
 
+            let event = match event {
+                Event::WindowEvent { event, ..} => event,
+                _ => return
+            };
+
             match event {
-                Closed => return Action::Stop,
+                Closed => stop = true,
 
                 Resized(w, h) => self.resize(w, h),
 
-                MouseMoved(x, y) => {
+                MouseMoved { position: (x, y), .. } => {
                     if self.dragging {
                         if let Some((prev_x, prev_y)) = self.last_mouse_position {
                             let offset = (prev_x - x, prev_y - y);
@@ -207,12 +215,12 @@ impl RootWindow {
                             self.calculate_projection();
                         }
                     }
-                    
+
                     self.last_mouse_position = Some((x, y));
                 }
 
-                MouseInput(state, MouseButton::Middle) |
-                MouseInput(state, MouseButton::Left) => {
+                MouseInput { state, button: MouseButton::Middle, .. } |
+                MouseInput { state, button: MouseButton::Left, .. } => {
                     use glium::glutin::ElementState::*;
 
                     match state {
@@ -226,7 +234,7 @@ impl RootWindow {
                 }
 
                 // FIXME: Support PixelDelta
-                MouseWheel(MouseScrollDelta::LineDelta(_, v), _) => {
+                MouseWheel { delta: MouseScrollDelta::LineDelta(_, v), .. } => {
                     self.zoom_level = cmp::max(-4, self.zoom_level - v as i32);
 
                     // Keep mouse over the same world position after zooming
@@ -243,13 +251,14 @@ impl RootWindow {
                     self.calculate_projection();
                 }
 
-                MouseLeft => {
+                MouseLeft { .. } => {
                     self.dragging = false;
                 }
 
                 _ => (),
             }
-        }
+        });
+
         let ortho_matrix: &[[f32; 4]; 4] = self.ortho_matrix.as_ref();
 
         let uniforms = uniform! {
@@ -275,7 +284,11 @@ impl RootWindow {
 
         target.finish().unwrap();
 
-        Action::Continue
+        if stop {
+            Action::Stop
+        } else {
+            Action::Continue
+        }
     }
 }
 
@@ -303,6 +316,6 @@ fn start_loop<F>(mut callback: F)
             // if you have a game, update the state here
         }
 
-        thread::sleep(Duration::from_millis(((FIXED_TIME_STAMP - accumulator) / 1000000)));
+        thread::sleep(Duration::from_millis((FIXED_TIME_STAMP - accumulator) / 1000000));
     }
 }

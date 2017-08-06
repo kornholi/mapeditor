@@ -1,4 +1,4 @@
-#![feature(associated_consts, step_by)]
+#![feature(iterator_step_by)]
 
 extern crate byteorder;
 extern crate cgmath;
@@ -30,7 +30,6 @@ use std::io::Read;
 use std::fs::File;
 
 use glium::glutin;
-use glium::DisplayBuild;
 
 use datcontainer::DatContainer;
 use spritecontainer::SpriteContainer;
@@ -103,16 +102,19 @@ fn main() {
 
     println!("OTBM node load took {}ms for {} tiles", end - start, tiles);
 
-    let display = glutin::WindowBuilder::new()
-        .with_title(format!("Map Editor"))
-        .with_dimensions(1100, 1100)
+    let mut event_loop = glutin::EventsLoop::new();
+    let window = glutin::WindowBuilder::new()
+        .with_title("Map Editor")
+        .with_dimensions(1100, 1100);
         //.with_vsync()
-        .build_glium()
-        .unwrap();
+        //.build()
+        //.unwrap();
+    let context = glutin::ContextBuilder::new();
+    let display = glium::Display::new(window, context,  &event_loop).unwrap();
 
     let rend = Renderer::<rootwindow::Vertex>::new(dat, otb, map);
     let mut root = RootWindow::new(display, rend, spr);
 
     root.resize(1100, 1100);
-    root.run();
+    root.run(&mut event_loop);
 }
