@@ -204,7 +204,7 @@ impl RootWindow {
 
                 Resized(w, h) => self.resize(w, h),
 
-                MouseMoved { position: (x, y), .. } => {
+                CursorMoved { position: (x, y), .. } => {
                     if self.dragging {
                         if let Some((prev_x, prev_y)) = self.last_mouse_position {
                             let offset = (prev_x - x, prev_y - y);
@@ -251,7 +251,7 @@ impl RootWindow {
                     self.calculate_projection();
                 }
 
-                MouseLeft { .. } => {
+                CursorLeft { .. } => {
                     self.dragging = false;
                 }
 
