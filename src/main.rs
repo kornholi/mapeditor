@@ -105,7 +105,7 @@ fn main() {
     let mut event_loop = glutin::EventsLoop::new();
     let window = glutin::WindowBuilder::new()
         .with_title("Map Editor")
-        .with_dimensions(1100, 1100);
+        .with_dimensions((1100, 1100).into());
         //.with_vsync()
         //.build()
         //.unwrap();
