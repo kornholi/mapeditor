@@ -1,5 +1,3 @@
-#![feature(iterator_step_by)]
-
 extern crate byteorder;
 extern crate cgmath;
 extern crate clock_ticks;
