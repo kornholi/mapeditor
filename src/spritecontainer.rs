@@ -1,5 +1,5 @@
 use std::io;
-use helpers::ReadExt;
+use crate::helpers::ReadExt;
 
 pub struct SpriteContainer<R> {
     pub f: R,

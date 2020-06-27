@@ -1,5 +1,5 @@
 use std::io;
-use helpers::ReadExt;
+use crate::helpers::ReadExt;
 
 use num_derive::FromPrimitive;
 use num::FromPrimitive;
@@ -71,7 +71,7 @@ pub struct Thing {
 }
 
 impl Thing {
-    pub fn deserialize(r: &mut io::Read) -> io::Result<Thing> {
+    pub fn deserialize(r: &mut dyn io::Read) -> io::Result<Thing> {
         let mut displacement = (0, 0);
         let mut elevation = 0;
 
@@ -179,7 +179,7 @@ impl Thing {
 }
 
 impl DatContainer {
-    pub fn new(r: &mut io::Read) -> io::Result<DatContainer> {
+    pub fn new(r: &mut dyn io::Read) -> io::Result<DatContainer> {
         let signature = r.read_u32()?;
 
         let num_items = r.read_u16()?;

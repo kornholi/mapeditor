@@ -4,7 +4,7 @@ use byteorder::{ReadBytesExt, LittleEndian};
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1252;
 
-use opentibia::Position;
+use crate::opentibia::Position;
 
 pub trait ReadExt: io::Read {
     fn read_byte(&mut self) -> Result<u8> {

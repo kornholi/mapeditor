@@ -2,7 +2,7 @@ use std::io;
 use num::FromPrimitive;
 use num_derive::FromPrimitive;
 
-use helpers::ReadExt;
+use crate::helpers::ReadExt;
 
 use super::binaryfile;
 use super::Position;
@@ -132,7 +132,7 @@ impl Loader {
         Ok(loader)
     }
 
-    pub fn load<F>(&mut self, r: &mut io::Read, mut tile_callback: F) -> io::Result<()>
+    pub fn load<F>(&mut self, r: &mut dyn io::Read, mut tile_callback: F) -> io::Result<()>
         where F: FnMut(Position, &[Item])
     {
         binaryfile::streaming_parser(r, true, |kind, data| {

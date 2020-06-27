@@ -3,7 +3,7 @@ use std::io;
 use num::FromPrimitive;
 use num_derive::FromPrimitive;
 
-use helpers::ReadExt;
+use crate::helpers::ReadExt;
 
 use super::binaryfile;
 

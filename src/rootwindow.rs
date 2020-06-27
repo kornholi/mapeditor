@@ -8,7 +8,7 @@ use glium::Surface;
 use glium::index::{PrimitiveType, NoIndices};
 use glium::glutin::dpi::PhysicalPosition;
 
-use spritecontainer::SpriteContainer;
+use crate::spritecontainer::SpriteContainer;
 
 use super::renderer::Renderer;
 use super::spriteatlas::SpriteAtlas;

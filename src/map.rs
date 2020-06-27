@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
-use opentibia::Position;
-use opentibia::map::Item;
+use crate::opentibia::Position;
+use crate::opentibia::map::Item;
 
 #[derive(Debug, Default)]
 pub struct Map {
@@ -21,12 +21,12 @@ impl Map {
     }
 
     pub fn get(&self, pos: &Position) -> Option<&Sector> {
-        let sector_pos = Sector::get_sector_pos(pos); 
+        let sector_pos = Sector::get_sector_pos(pos);
         self.sectors.get(&sector_pos)
     }
 
     pub fn get_mut(&mut self, pos: &Position) -> Option<&mut Sector> {
-        let sector_pos = Sector::get_sector_pos(pos); 
+        let sector_pos = Sector::get_sector_pos(pos);
         self.sectors.get_mut(&sector_pos)
     }
 
@@ -56,7 +56,7 @@ impl Sector {
             tiles: tiles,
         }
     }
-    
+
     fn get_sector_pos(pos: &Position) -> Position {
         Position {
             x: pos.x & !(Sector::SIZE - 1),

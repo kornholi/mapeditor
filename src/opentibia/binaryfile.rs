@@ -1,5 +1,5 @@
 use std::io;
-use helpers::ReadExt;
+use crate::helpers::ReadExt;
 
 #[derive(Debug)]
 pub struct Node {
@@ -13,7 +13,7 @@ impl Node {
     const START: u8 = 0xFE;
     const END: u8 = 0xFF;
 
-    pub fn deserialize(r: &mut io::Read, skip_start: bool) -> io::Result<Node> {
+    pub fn deserialize(r: &mut dyn io::Read, skip_start: bool) -> io::Result<Node> {
         if !skip_start {
             let data = r.read_byte()?;
 

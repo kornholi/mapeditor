@@ -1,6 +1,6 @@
 use std::io;
 use std::fmt;
-use helpers::ReadExt;
+use crate::helpers::ReadExt;
 
 pub mod binaryfile;
 pub mod map;
