@@ -100,19 +100,19 @@ fn main() {
 
     println!("OTBM node load took {}ms for {} tiles", end - start, tiles);
 
-    let mut event_loop = glutin::EventsLoop::new();
-    let window = glutin::WindowBuilder::new()
+    let event_loop = glutin::event_loop::EventLoop::new();
+    let window = glutin::window::WindowBuilder::new()
         .with_title("Map Editor")
-        .with_dimensions((1100, 1100).into());
+        .with_inner_size(glutin::dpi::PhysicalSize::new(1100, 1100));
         //.with_vsync()
         //.build()
         //.unwrap();
     let context = glutin::ContextBuilder::new();
-    let display = glium::Display::new(window, context,  &event_loop).unwrap();
+    let display = glium::Display::new(window, context, &event_loop).unwrap();
 
     let rend = Renderer::<rootwindow::Vertex>::new(dat, otb, map);
     let mut root = RootWindow::new(display, rend, spr);
 
     root.resize(1100, 1100);
-    root.run(&mut event_loop);
+    root.run(event_loop);
 }

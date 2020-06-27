@@ -2,12 +2,11 @@ use glium;
 use cgmath::{self, Zero};
 use clock_ticks;
 
-use std::{cmp, f32, thread, io, fs};
-use std::time::Duration;
+use std::{cmp, f32, io, fs};
 
 use glium::Surface;
 use glium::index::{PrimitiveType, NoIndices};
-use glium::glutin::dpi::LogicalPosition;
+use glium::glutin::dpi::PhysicalPosition;
 
 use spritecontainer::SpriteContainer;
 
@@ -22,10 +21,6 @@ pub struct Vertex {
 }
 
 implement_vertex!(Vertex, position, color, tex_coord);
-enum Action {
-    Stop,
-    Continue,
-}
 
 pub struct RootWindow {
     display: glium::backend::glutin::Display,
@@ -45,7 +40,7 @@ pub struct RootWindow {
     scaling_factor: f32,
     ul_offset: (f32, f32),
 
-    last_mouse_position: Option<LogicalPosition>,
+    last_mouse_position: Option<PhysicalPosition<f64>>,
     dragging: bool,
 }
 
@@ -181,143 +176,115 @@ impl RootWindow {
         println!("Rendering {} sectors took {}ms - {} vertices", vis.len(), end - start, vbo_offset);
     }
 
-    pub fn run(&mut self, event_loop: &mut glium::glutin::EventsLoop) {
-        start_loop(|| self.loop_callback(event_loop));
-    }
+    pub fn run(mut self, event_loop: glium::glutin::event_loop::EventLoop<()>) {
+        // start_loop(|| self.loop_callback(event_loop));
 
-    fn loop_callback(&mut self, event_loop: &mut glium::glutin::EventsLoop) -> Action {
-        let mut stop = false;
+        event_loop.run(move |event, _, control_flow| {
+            use glium::glutin::event::Event;
+            use glium::glutin::event_loop::ControlFlow;
+            use glium::glutin::event::WindowEvent::*;
+            use glium::glutin::event::{MouseButton, MouseScrollDelta};
 
-        // Polling and handling the events received by the window
-        event_loop.poll_events(|event| {
-            use glium::glutin::Event;
-            use glium::glutin::WindowEvent::*;
-            use glium::glutin::{MouseButton, MouseScrollDelta};
-            //println!("ev: {:?}", event);
+            let next_frame_time = std::time::Instant::now() +
+                std::time::Duration::from_nanos(16_666_667);
 
-            let event = match event {
-                Event::WindowEvent { event, ..} => event,
-                _ => return
-            };
+            *control_flow = ControlFlow::WaitUntil(next_frame_time);
 
             match event {
-                CloseRequested => stop = true,
+                Event::WindowEvent { event, .. } => match event {
+                    CloseRequested => {
+                        *control_flow = ControlFlow::Exit;
+                        return;
+                    },
 
-                Resized(new_size) => self.resize(new_size.width as u32, new_size.height as u32),
+                    Resized(new_size) => self.resize(new_size.width as u32, new_size.height as u32),
 
-                CursorMoved { position, .. } => {
-                    if self.dragging {
-                        if let Some(prev_position) = self.last_mouse_position {
-                            let x_offset = prev_position.x - position.x;
-                            let y_offset = prev_position.y - position.y;
+                    CursorMoved { position, .. } => {
+                        if self.dragging {
+                            if let Some(prev_position) = self.last_mouse_position {
+                                let x_offset = prev_position.x - position.x;
+                                let y_offset = prev_position.y - position.y;
 
-                            self.ul_offset.0 += x_offset as f32 * self.scaling_factor;
-                            self.ul_offset.1 += y_offset as f32 * self.scaling_factor;
+                                self.ul_offset.0 += x_offset as f32 * self.scaling_factor;
+                                self.ul_offset.1 += y_offset as f32 * self.scaling_factor;
 
-                            self.calculate_projection();
+                                self.calculate_projection();
+                            }
+                        }
+
+                        self.last_mouse_position = Some(position);
+                    }
+
+                    MouseInput { state, button: MouseButton::Middle, .. } |
+                    MouseInput { state, button: MouseButton::Left, .. } => {
+                        use glium::glutin::event::ElementState::*;
+
+                        match state {
+                            Pressed => self.dragging = true,
+                            Released => {
+                                self.dragging = false;
+
+                                self.calculate_projection(); // FIXME: get rid of this
+                            }
                         }
                     }
 
-                    self.last_mouse_position = Some(position);
-                }
+                    // FIXME: Support PixelDelta
+                    MouseWheel { delta: MouseScrollDelta::LineDelta(_, v), .. } => {
+                        self.zoom_level = cmp::max(-4, self.zoom_level - v as i32);
 
-                MouseInput { state, button: MouseButton::Middle, .. } |
-                MouseInput { state, button: MouseButton::Left, .. } => {
-                    use glium::glutin::ElementState::*;
+                        // Keep mouse over the same world position after zooming
+                        if let Some(prev) = self.last_mouse_position {
+                            let new_scaling_factor = self.get_zooming_factor();
 
-                    match state {
-                        Pressed => self.dragging = true,
-                        Released => {
-                            self.dragging = false;
+                            let shift_x = (prev.x as f32) * (self.scaling_factor - new_scaling_factor);
+                            let shift_y = (prev.y as f32) * (self.scaling_factor - new_scaling_factor);
 
-                            self.calculate_projection(); // FIXME: get rid of this
+                            self.ul_offset.0 += shift_x;
+                            self.ul_offset.1 += shift_y;
                         }
-                    }
-                }
 
-                // FIXME: Support PixelDelta
-                MouseWheel { delta: MouseScrollDelta::LineDelta(_, v), .. } => {
-                    self.zoom_level = cmp::max(-4, self.zoom_level - v as i32);
-
-                    // Keep mouse over the same world position after zooming
-                    if let Some(prev) = self.last_mouse_position {
-                        let new_scaling_factor = self.get_zooming_factor();
-
-                        let shift_x = (prev.x as f32) * (self.scaling_factor - new_scaling_factor);
-                        let shift_y = (prev.y as f32) * (self.scaling_factor - new_scaling_factor);
-
-                        self.ul_offset.0 += shift_x;
-                        self.ul_offset.1 += shift_y;
+                        self.calculate_projection();
                     }
 
-                    self.calculate_projection();
-                }
+                    CursorLeft { .. } => {
+                        self.dragging = false;
+                    }
 
-                CursorLeft { .. } => {
-                    self.dragging = false;
-                }
-
-                _ => (),
+                    _ => (),
+                },
+                Event::NewEvents(cause) => match cause {
+                    glium::glutin::event::StartCause::ResumeTimeReached { .. } => (),
+                    glium::glutin::event::StartCause::Init => (),
+                    _ => return,
+                },
+                _ => return,
             }
+
+            let ortho_matrix: &[[f32; 4]; 4] = self.ortho_matrix.as_ref();
+
+            let uniforms = uniform! {
+                matrix: *ortho_matrix,
+                tex: self.spr_atlas.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear)
+            };
+
+            let draw_params =
+                glium::DrawParameters { blend: glium::Blend::alpha_blending(), ..Default::default() };
+
+            // drawing a frame
+            let mut target = self.display.draw();
+            target.clear_color(0.5, 0.5, 0.5, 1.0);
+
+            if self.vertex_buffer_len > 0 {
+                target.draw(self.vertex_buffer.slice(0..self.vertex_buffer_len).unwrap(),
+                      NoIndices(PrimitiveType::Points),
+                      &self.program,
+                      &uniforms,
+                      &draw_params)
+                .unwrap();
+            }
+
+            target.finish().unwrap();
         });
-
-        let ortho_matrix: &[[f32; 4]; 4] = self.ortho_matrix.as_ref();
-
-        let uniforms = uniform! {
-            matrix: *ortho_matrix,
-            tex: self.spr_atlas.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear)
-        };
-
-        let draw_params =
-            glium::DrawParameters { blend: glium::Blend::alpha_blending(), ..Default::default() };
-
-        // drawing a frame
-        let mut target = self.display.draw();
-        target.clear_color(0.5, 0.5, 0.5, 1.0);
-
-        if self.vertex_buffer_len > 0 {
-            target.draw(self.vertex_buffer.slice(0..self.vertex_buffer_len).unwrap(),
-                  NoIndices(PrimitiveType::Points),
-                  &self.program,
-                  &uniforms,
-                  &draw_params)
-            .unwrap();
-        }
-
-        target.finish().unwrap();
-
-        if stop {
-            Action::Stop
-        } else {
-            Action::Continue
-        }
-    }
-}
-
-fn start_loop<F>(mut callback: F)
-    where F: FnMut() -> Action
-{
-    let mut accumulator = 0;
-    let mut previous_clock = clock_ticks::precise_time_ns();
-
-    loop {
-        match callback() {
-            Action::Stop => break,
-            Action::Continue => (),
-        };
-
-        let now = clock_ticks::precise_time_ns();
-
-        accumulator += now - previous_clock;
-        previous_clock = now;
-
-        const FIXED_TIME_STAMP: u64 = 16666667;
-        while accumulator >= FIXED_TIME_STAMP {
-            accumulator -= FIXED_TIME_STAMP;
-
-            // if you have a game, update the state here
-        }
-
-        thread::sleep(Duration::from_millis((FIXED_TIME_STAMP - accumulator) / 1000000));
     }
 }
