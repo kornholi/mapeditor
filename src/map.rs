@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 
-use crate::opentibia::Position;
 use crate::opentibia::map::Item;
+use crate::opentibia::Position;
 
 #[derive(Debug, Default)]
 pub struct Map {
@@ -17,7 +17,9 @@ pub struct Sector {
 
 impl Map {
     pub fn new() -> Map {
-        Map { ..Default::default() }
+        Map {
+            ..Default::default()
+        }
     }
 
     pub fn get(&self, pos: &Position) -> Option<&Sector> {
@@ -35,7 +37,7 @@ impl Map {
 
         match self.sectors.entry(sector_pos) {
             Entry::Occupied(o) => o.into_mut(),
-            Entry::Vacant(v) => v.insert(Sector::new(sector_pos))
+            Entry::Vacant(v) => v.insert(Sector::new(sector_pos)),
         }
     }
 }
@@ -51,10 +53,7 @@ impl Sector {
             tiles.push(Vec::new());
         }
 
-        Sector {
-            origin,
-            tiles,
-        }
+        Sector { origin, tiles }
     }
 
     fn get_sector_pos(pos: &Position) -> Position {
@@ -72,7 +71,7 @@ impl Sector {
     pub fn iter(&self) -> SectorTileIterator {
         SectorTileIterator {
             sector: self,
-            index: 0
+            index: 0,
         }
     }
 }
@@ -84,7 +83,7 @@ impl<'a> IntoIterator for &'a Sector {
     fn into_iter(self) -> Self::IntoIter {
         SectorTileIterator {
             sector: self,
-            index: 0
+            index: 0,
         }
     }
 }
@@ -105,7 +104,7 @@ impl<'a> Iterator for SectorTileIterator<'a> {
             let pos = Position {
                 x: tile_x,
                 y: tile_y,
-                z: self.sector.origin.z
+                z: self.sector.origin.z,
             };
 
             let tile = &self.sector.tiles[self.index as usize];

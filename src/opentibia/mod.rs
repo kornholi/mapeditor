@@ -1,10 +1,10 @@
-use std::io;
-use std::fmt;
 use crate::helpers::ReadExt;
+use std::fmt;
+use std::io;
 
 pub mod binaryfile;
-pub mod map;
 pub mod itemtypes;
+pub mod map;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Position {
@@ -15,7 +15,8 @@ pub struct Position {
 
 impl Position {
     pub fn deserialize<R>(mut r: R) -> io::Result<Position>
-        where R: io::Read
+    where
+        R: io::Read,
     {
         Ok(Position {
             x: r.read_u16()?,

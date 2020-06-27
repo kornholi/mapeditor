@@ -1,6 +1,6 @@
-use std::io;
 use num::FromPrimitive;
 use num_derive::FromPrimitive;
+use std::io;
 
 use crate::helpers::ReadExt;
 
@@ -24,7 +24,7 @@ enum NodeKind {
     Town = 13,
     HouseTile = 14,
     WayPoints = 15,
-    WayPoint = 16
+    WayPoint = 16,
 }
 
 #[derive(Debug, FromPrimitive, PartialEq)]
@@ -62,7 +62,7 @@ enum NodeAttributeKind {
     ItemHitChance = 32,
     ItemShootRange = 33,
 
-    AttributeMap = 128
+    AttributeMap = 128,
 }
 
 #[derive(Clone, Debug)]
@@ -121,19 +121,23 @@ pub struct Loader {
 
 impl Loader {
     pub fn open<R>(r: R) -> io::Result<Loader>
-        where R: io::Read
+    where
+        R: io::Read,
     {
-        let mut loader = Loader { ..Default::default() };
+        let mut loader = Loader {
+            ..Default::default()
+        };
 
-        binaryfile::streaming_parser(r,
-                                     false,
-                                     |kind, data| loader.load_headers_callback(kind, data))?;
+        binaryfile::streaming_parser(r, false, |kind, data| {
+            loader.load_headers_callback(kind, data)
+        })?;
 
         Ok(loader)
     }
 
     pub fn load<F>(&mut self, r: &mut dyn io::Read, mut tile_callback: F) -> io::Result<()>
-        where F: FnMut(Position, &[Item])
+    where
+        F: FnMut(Position, &[Item]),
     {
         binaryfile::streaming_parser(r, true, |kind, data| {
             self.load_callback(kind, data, &mut tile_callback)
@@ -157,8 +161,8 @@ impl Loader {
                 while !data.is_empty() {
                     use self::NodeAttributeKind::*;
                     let raw_attr = data.read_byte()?;
-                    let attribute = NodeAttributeKind::from_u8(raw_attr)
-                        .expect("unknown attribute");
+                    let attribute =
+                        NodeAttributeKind::from_u8(raw_attr).expect("unknown attribute");
 
                     match attribute {
                         MapDescription => self.description.push(data.read_string()?),
@@ -175,12 +179,14 @@ impl Loader {
         }
     }
 
-    fn load_callback<F>(&mut self,
-                        kind: u8,
-                        mut data: &[u8],
-                        mut tile_callback: F)
-                        -> io::Result<bool>
-        where F: FnMut(Position, &[Item])
+    fn load_callback<F>(
+        &mut self,
+        kind: u8,
+        mut data: &[u8],
+        mut tile_callback: F,
+    ) -> io::Result<bool>
+    where
+        F: FnMut(Position, &[Item]),
     {
         let kind = NodeKind::from_u8(kind).expect("unknown map node kind");
 
@@ -252,8 +258,8 @@ impl Loader {
                     use self::NodeAttributeKind::*;
 
                     let raw_attr = data.read_byte()?;
-                    let attribute_kind = NodeAttributeKind::from_u8(raw_attr)
-                        .expect("unknown attribute");
+                    let attribute_kind =
+                        NodeAttributeKind::from_u8(raw_attr).expect("unknown attribute");
 
                     let attribute = match attribute_kind {
                         ItemCount | RuneCharges => ItemAttribute::Count(data.read_byte()?),
@@ -313,7 +319,8 @@ pub struct Town {
 
 impl Town {
     pub fn deserialize<R>(mut r: R) -> io::Result<Town>
-        where R: io::Read
+    where
+        R: io::Read,
     {
         Ok(Town {
             id: r.read_u32()?,
@@ -331,7 +338,8 @@ pub struct Waypoint {
 
 impl Waypoint {
     pub fn deserialize<R>(mut r: R) -> io::Result<Waypoint>
-        where R: io::Read
+    where
+        R: io::Read,
     {
         Ok(Waypoint {
             name: r.read_string()?,

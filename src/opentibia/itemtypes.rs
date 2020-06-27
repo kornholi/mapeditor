@@ -1,7 +1,7 @@
-use vec_map::VecMap;
-use std::io;
 use num::FromPrimitive;
 use num_derive::FromPrimitive;
+use std::io;
+use vec_map::VecMap;
 
 use crate::helpers::ReadExt;
 
@@ -31,16 +31,16 @@ enum AttributeKind {
     Attr08,
     Light,
 
-    Decay2, //deprecated
-    Weapon2, //deprecated
+    Decay2,      //deprecated
+    Weapon2,     //deprecated
     Ammunition2, //deprecated
-    Armor2, //deprecated
-    Writeable2, //deprecated
+    Armor2,      //deprecated
+    Writeable2,  //deprecated
     Light2,
     TopOrder,
     Writeable3, //deprecated
 
-    WareId
+    WareId,
 }
 
 #[derive(Debug, Default)]
@@ -59,20 +59,23 @@ pub struct Item {
 
 impl Container {
     pub fn new<R>(mut r: R) -> io::Result<Container>
-        where R: io::Read
+    where
+        R: io::Read,
     {
         let root_node = binaryfile::Node::deserialize(&mut r, false)?;
         let mut data = &root_node.data[..];
 
-        let mut container = Container { ..Default::default() };
+        let mut container = Container {
+            ..Default::default()
+        };
 
         // currently not being used
         container.flags = data.read_u32()?;
 
         let attr = data.read_byte()?;
         if attr == 1 {
-            let datalen = data.read_u16()?;
-            assert_eq!(datalen, 140);
+            let data_len = data.read_u16()?;
+            assert_eq!(data_len, 140);
 
             let major_version = data.read_u32()?;
             let minor_version = data.read_u32()?;
@@ -90,7 +93,9 @@ impl Container {
         }
 
         for item_node in &root_node.children {
-            let mut item = Item { ..Default::default() };
+            let mut item = Item {
+                ..Default::default()
+            };
 
             let mut data = &item_node.data[..];
             let _flags = data.read_u32()?;
@@ -98,8 +103,7 @@ impl Container {
             while !data.is_empty() {
                 use self::AttributeKind::*;
 
-                let kind = AttributeKind::from_u8(data.read_byte()?)
-                    .expect("unknown map node");
+                let kind = AttributeKind::from_u8(data.read_byte()?).expect("unknown map node");
                 let len = data.read_u16()?;
 
                 match kind {

@@ -12,20 +12,20 @@ mod rootwindow;
 mod spriteatlas;
 mod spritecontainer;
 
-use std::io::Read;
 use std::fs::File;
+use std::io::Read;
 
 use serde::Deserialize;
 
 use glium::glutin;
 
 use datcontainer::DatContainer;
-use spritecontainer::SpriteContainer;
 use renderer::Renderer;
 use rootwindow::RootWindow;
+use spritecontainer::SpriteContainer;
 
-use opentibia::itemtypes;
 use helpers::ReadExt;
+use opentibia::itemtypes;
 
 #[derive(Deserialize)]
 struct Config {
@@ -78,7 +78,8 @@ fn main() {
     let mut otbm_map = opentibia::map::Loader::open(&mut data).unwrap();
     let mut tiles = 0;
 
-    otbm_map.load(&mut data, |ref pos, items| {
+    otbm_map
+        .load(&mut data, |ref pos, items| {
             tiles += 1;
 
             let sec = map.get_or_create(pos);
@@ -88,15 +89,19 @@ fn main() {
 
     let dur = start.elapsed().as_secs_f64();
 
-    println!("OTBM node load took {:.2}ms for {} tiles", dur * 1000., tiles);
+    println!(
+        "OTBM node load took {:.2}ms for {} tiles",
+        dur * 1000.,
+        tiles
+    );
 
     let event_loop = glutin::event_loop::EventLoop::new();
     let window = glutin::window::WindowBuilder::new()
         .with_title("Map Editor")
         .with_inner_size(glutin::dpi::PhysicalSize::new(1100, 1100));
-        //.with_vsync()
-        //.build()
-        //.unwrap();
+    //.with_vsync()
+    //.build()
+    //.unwrap();
     let context = glutin::ContextBuilder::new();
     let display = glium::Display::new(window, context, &event_loop).unwrap();
 

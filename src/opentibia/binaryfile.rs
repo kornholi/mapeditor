@@ -1,5 +1,5 @@
-use std::io;
 use crate::helpers::ReadExt;
+use std::io;
 
 #[derive(Debug)]
 pub struct Node {
@@ -18,7 +18,10 @@ impl Node {
             let data = r.read_byte()?;
 
             if data != Node::START {
-                return Err(io::Error::new(io::ErrorKind::InvalidInput, "expected start of a node"));
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "expected start of a node",
+                ));
             }
         }
 
@@ -50,14 +53,18 @@ impl Node {
 }
 
 pub fn streaming_parser<R, F>(mut r: R, skip_start: bool, mut callback: F) -> io::Result<()>
-    where F: FnMut(u8, &[u8]) -> io::Result<bool>,
-          R: io::Read
+where
+    F: FnMut(u8, &[u8]) -> io::Result<bool>,
+    R: io::Read,
 {
     if !skip_start {
         let data = r.read_byte()?;
 
         if data != Node::START {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "expected start of a node"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "expected start of a node",
+            ));
         }
     }
 

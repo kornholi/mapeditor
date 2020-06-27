@@ -16,20 +16,24 @@ pub struct Renderer<V> {
     sector_cache: LruCache<Position, Vec<V>>,
 }
 
-fn get_sprite_id(obj: &datcontainer::Thing,
-                 layer: u8,
-                 pattern_x: u16,
-                 pattern_y: u16,
-                 x: u8,
-                 y: u8)
-                 -> usize {
-    let animation_time = 0;
+fn get_sprite_id(
+    obj: &datcontainer::Thing,
+    layer: u8,
+    pattern_x: u16,
+    pattern_y: u16,
+    x: u8,
+    y: u8,
+) -> usize {
+    let animation_time = 0 % 4095;
 
-    ((((((animation_time % 4095) * obj.pattern_height as u16 +
-         pattern_y % obj.pattern_height as u16) * obj.pattern_width as u16 +
-        pattern_x % obj.pattern_width as u16) * obj.layers as u16 +
-       layer as u16) * obj.height as u16 + y as u16) * obj.width as u16 + x as u16) as usize %
-    obj.sprite_ids.len()
+    let mut idx = animation_time;
+    idx = idx * obj.pattern_height as u16 + pattern_y % obj.pattern_height as u16;
+    idx = idx * obj.pattern_width as u16 + pattern_x % obj.pattern_width as u16;
+    idx = idx * obj.layers as u16 + layer as u16;
+    idx = idx * obj.height as u16 + y as u16;
+    idx = idx * obj.width as u16 + x as u16;
+
+    idx as usize % obj.sprite_ids.len()
 }
 
 impl<V> Renderer<V> {
@@ -39,7 +43,7 @@ impl<V> Renderer<V> {
             otb,
             map,
 
-            sector_cache: LruCache::new(512)
+            sector_cache: LruCache::new(512),
         }
     }
 
@@ -66,8 +70,13 @@ impl<V> Renderer<V> {
         sectors
     }
 
-    pub fn get_sector_vertices<F>(&mut self, sector_pos: Position, mut sprite_callback: F) -> Option<&[V]>
-        where F: FnMut((f32, f32), u32) -> V
+    pub fn get_sector_vertices<F>(
+        &mut self,
+        sector_pos: Position,
+        mut sprite_callback: F,
+    ) -> Option<&[V]>
+    where
+        F: FnMut((f32, f32), u32) -> V,
     {
         if !self.sector_cache.contains_key(&sector_pos) {
             if let Some(s) = self.map.get(&sector_pos) {
@@ -83,7 +92,8 @@ impl<V> Renderer<V> {
     }
 
     fn render_sector<F>(&self, sector: &map::Sector, mut sprite_callback: F)
-        where F: FnMut((f32, f32), u32)
+    where
+        F: FnMut((f32, f32), u32),
     {
         for (pos, tile) in sector {
             let mut elevation = 0;
@@ -93,7 +103,7 @@ impl<V> Renderer<V> {
 
                 let client_id = match otb_entry.client_id {
                     Some(v) => v,
-                    None => continue
+                    None => continue,
                 };
 
                 let obj = &self.dat.items[(client_id - 100) as usize];
@@ -111,10 +121,12 @@ impl<V> Renderer<V> {
                                 continue;
                             }
 
-                            let obj_x = pos.x as f32 - x as f32 -
-                                        (obj.displacement.0 + elevation) as f32 / 32.;
-                            let obj_y = pos.y as f32 - y as f32 -
-                                        (obj.displacement.1 + elevation) as f32 / 32.;
+                            let obj_x = pos.x as f32
+                                - x as f32
+                                - (obj.displacement.0 + elevation) as f32 / 32.;
+                            let obj_y = pos.y as f32
+                                - y as f32
+                                - (obj.displacement.1 + elevation) as f32 / 32.;
 
                             sprite_callback((obj_x, obj_y), spr_id);
                         }

@@ -1,5 +1,5 @@
-use std::io;
 use crate::helpers::ReadExt;
+use std::io;
 
 pub struct SpriteContainer<R> {
     pub f: R,
@@ -13,7 +13,8 @@ pub struct SpriteContainer<R> {
 //  Autodetect u16/u32 based on file signature
 
 impl<R> SpriteContainer<R>
-    where R: io::Read + io::Seek
+where
+    R: io::Read + io::Seek,
 {
     pub fn new(mut r: R) -> io::Result<SpriteContainer<R>> {
         let signature = r.read_u32()?;
@@ -33,11 +34,12 @@ impl<R> SpriteContainer<R>
         })
     }
 
-    pub fn get_sprite(&mut self,
-                      idx: u32,
-                      output: &mut [u8],
-                      output_stride: usize)
-                      -> io::Result<()> {
+    pub fn get_sprite(
+        &mut self,
+        idx: u32,
+        output: &mut [u8],
+        output_stride: usize,
+    ) -> io::Result<()> {
         let offset = self.offsets[idx as usize - 1];
         self.f.seek(io::SeekFrom::Start(offset as u64))?;
 

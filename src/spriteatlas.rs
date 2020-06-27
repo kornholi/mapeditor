@@ -1,6 +1,6 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 
 use glium::backend::Facade;
 use glium::texture::SrgbTexture2d;
@@ -49,7 +49,8 @@ impl SpriteAtlas {
     }
 
     pub fn get_or_load<F>(&mut self, id: u32, mut loader: F) -> [f32; 2]
-        where F: FnMut(&mut [u8], usize)
+    where
+        F: FnMut(&mut [u8], usize),
     {
         assert!(self.sprites.len() < (2048 * 2048) / (34 * 34));
         let end_idx = self.sprites.len() + 1;
@@ -76,13 +77,15 @@ impl SpriteAtlas {
                     format: glium::texture::ClientFormat::U8U8U8U8,
                 };
 
-                self.texture.write(glium::Rect {
-                                       left: l as u32 * 34,
-                                       bottom: b as u32 * 34,
-                                       width: 34,
-                                       height: 34,
-                                   },
-                                   sprite);
+                self.texture.write(
+                    glium::Rect {
+                        left: l as u32 * 34,
+                        bottom: b as u32 * 34,
+                        width: 34,
+                        height: 34,
+                    },
+                    sprite,
+                );
 
                 *tex.insert([(l as f32 * 34. + 1.) / 2048., (b as f32 * 34. + 1.) / 2048.])
             }

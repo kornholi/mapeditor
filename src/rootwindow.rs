@@ -2,12 +2,12 @@ use std::time::Instant;
 
 use cgmath::{self, Zero};
 
-use std::{cmp, f32, io, fs};
+use std::{cmp, f32, fs, io};
 
 use glium::glutin;
-use glium::Surface;
-use glium::index::{PrimitiveType, NoIndices};
 use glium::glutin::dpi::PhysicalPosition;
+use glium::index::{NoIndices, PrimitiveType};
+use glium::Surface;
 
 use crate::spritecontainer::SpriteContainer;
 
@@ -46,12 +46,13 @@ pub struct RootWindow {
 }
 
 impl RootWindow {
-    pub fn new(display: glium::backend::glutin::Display,
-               renderer: Renderer<Vertex>,
-               spr: SpriteContainer<io::BufReader<fs::File>>)
-               -> RootWindow {
-        let vertex_buffer = glium::VertexBuffer::empty_persistent(&display, 1 << 24)
-            .expect("VBO creation failed");
+    pub fn new(
+        display: glium::backend::glutin::Display,
+        renderer: Renderer<Vertex>,
+        spr: SpriteContainer<io::BufReader<fs::File>>,
+    ) -> RootWindow {
+        let vertex_buffer =
+            glium::VertexBuffer::empty_persistent(&display, 1 << 24).expect("VBO creation failed");
 
         // {
         // use image;
@@ -71,7 +72,7 @@ impl RootWindow {
                 fragment: include_str!("shaders/330.frag")
             },
         )
-            .unwrap();
+        .unwrap();
 
         RootWindow {
             spr,
@@ -138,7 +139,8 @@ impl RootWindow {
 
         let mut sprite_callback = |(x, y), sprite_id| {
             let tex_pos = atlas.get_or_load(sprite_id, |buf, stride| {
-                spr.get_sprite(sprite_id, buf, stride).expect("failed to load sprite")
+                spr.get_sprite(sprite_id, buf, stride)
+                    .expect("failed to load sprite")
             });
 
             Vertex {
@@ -154,7 +156,9 @@ impl RootWindow {
         self.vertex_buffer.invalidate();
 
         for sector_pos in &vis {
-            let vertices = self.renderer.get_sector_vertices(*sector_pos, &mut sprite_callback);
+            let vertices = self
+                .renderer
+                .get_sector_vertices(*sector_pos, &mut sprite_callback);
 
             if let Some(vertices) = vertices {
                 if vertices.is_empty() {
@@ -166,7 +170,10 @@ impl RootWindow {
                     break;
                 }
 
-                self.vertex_buffer.slice(vbo_offset..vbo_offset + vertices.len()).unwrap().write(vertices);
+                self.vertex_buffer
+                    .slice(vbo_offset..vbo_offset + vertices.len())
+                    .unwrap()
+                    .write(vertices);
                 vbo_offset += vertices.len();
             }
         }
@@ -175,7 +182,9 @@ impl RootWindow {
 
         println!(
             "Rendering {} sectors took {:.2}ms - {} vertices",
-            vis.len(), start.elapsed().as_secs_f64() * 1000.0, vbo_offset
+            vis.len(),
+            start.elapsed().as_secs_f64() * 1000.0,
+            vbo_offset
         );
     }
 

@@ -1,8 +1,8 @@
-use std::io;
 use crate::helpers::ReadExt;
+use std::io;
 
-use num_derive::FromPrimitive;
 use num::FromPrimitive;
+use num_derive::FromPrimitive;
 
 pub struct DatContainer {
     pub signature: u32,
@@ -51,7 +51,7 @@ pub enum Attribute {
     DefaultAction,
 
     Usable = 0xFE,
-    End = 0xFF
+    End = 0xFF,
 }
 
 #[derive(Debug)]
@@ -78,8 +78,8 @@ impl Thing {
         loop {
             // TODO: return custom error
             let raw_attr = r.read_byte()?;
-            let attr = Attribute::from_u8(raw_attr)
-                .expect(&format!("unknown attribute {}", raw_attr));
+            let attr =
+                Attribute::from_u8(raw_attr).expect(&format!("unknown attribute {}", raw_attr));
 
             {
                 use self::Attribute::*;
@@ -151,9 +151,13 @@ impl Thing {
             }
         }
 
-        let sprite_count =
-            width as u16 * height as u16 * pattern_width as u16 * pattern_height as u16 *
-            pattern_depth as u16 * layers as u16 * animation_length as u16;
+        let sprite_count = width as u16
+            * height as u16
+            * pattern_width as u16
+            * pattern_height as u16
+            * pattern_depth as u16
+            * layers as u16
+            * animation_length as u16;
 
         let mut sprite_ids = Vec::with_capacity(sprite_count as usize);
 
@@ -195,9 +199,6 @@ impl DatContainer {
             client_id += 1;
         }
 
-        Ok(DatContainer {
-            signature,
-            items,
-        })
+        Ok(DatContainer { signature, items })
     }
 }

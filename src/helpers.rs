@@ -1,8 +1,8 @@
+use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::{self, Result};
-use byteorder::{ReadBytesExt, LittleEndian};
 
-use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1252;
+use encoding::{DecoderTrap, Encoding};
 
 use crate::opentibia::Position;
 
