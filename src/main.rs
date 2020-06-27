@@ -1,6 +1,5 @@
 extern crate byteorder;
 extern crate cgmath;
-extern crate clock_ticks;
 extern crate encoding;
 #[macro_use]
 extern crate glium;
@@ -13,6 +12,8 @@ extern crate lru_cache;
 
 #[macro_use]
 extern crate serde_derive;
+
+use std::time::Instant;
 
 mod datcontainer;
 mod helpers;
@@ -81,7 +82,7 @@ fn main() {
     //        println!("node {} with {}b", kind, data.len());
     //    });
 
-    let start = clock_ticks::precise_time_ms();
+    let start = Instant::now();
     let mut map = map::Map::new();
 
     let mut otbm_map = opentibia::map::Loader::open(&mut data).unwrap();
@@ -95,9 +96,9 @@ fn main() {
         })
         .expect("failed to load OTBM");
 
-    let end = clock_ticks::precise_time_ms();
+    let dur = start.elapsed().as_secs_f64();
 
-    println!("OTBM node load took {}ms for {} tiles", end - start, tiles);
+    println!("OTBM node load took {:.2}ms for {} tiles", dur * 1000., tiles);
 
     let event_loop = glutin::event_loop::EventLoop::new();
     let window = glutin::window::WindowBuilder::new()

@@ -144,12 +144,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "clock_ticks"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c49a90f58e73ac5f41ed0ac249861ceb5f0976db35fabc2b9c2c856916042d63"
-
-[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -633,7 +627,6 @@ version = "0.1.0"
 dependencies = [
  "byteorder",
  "cgmath",
- "clock_ticks",
  "encoding",
  "glium",
  "image",

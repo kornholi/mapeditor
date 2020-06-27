@@ -1,6 +1,7 @@
+use std::time::Instant;
+
 use glium;
 use cgmath::{self, Zero};
-use clock_ticks;
 
 use std::{cmp, f32, io, fs};
 
@@ -147,7 +148,7 @@ impl RootWindow {
             }
         };
 
-        let start = clock_ticks::precise_time_ms();
+        let start = Instant::now();
         let mut vbo_offset = 0;
 
         self.vertex_buffer.invalidate();
@@ -172,13 +173,13 @@ impl RootWindow {
 
         self.vertex_buffer_len = vbo_offset;
 
-        let end = clock_ticks::precise_time_ms();
-        println!("Rendering {} sectors took {}ms - {} vertices", vis.len(), end - start, vbo_offset);
+        println!(
+            "Rendering {} sectors took {:.2}ms - {} vertices",
+            vis.len(), start.elapsed().as_secs_f64() * 1000.0, vbo_offset
+        );
     }
 
     pub fn run(mut self, event_loop: glium::glutin::event_loop::EventLoop<()>) {
-        // start_loop(|| self.loop_callback(event_loop));
-
         event_loop.run(move |event, _, control_flow| {
             use glium::glutin::event::Event;
             use glium::glutin::event_loop::ControlFlow;
