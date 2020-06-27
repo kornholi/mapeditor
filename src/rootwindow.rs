@@ -1,10 +1,10 @@
 use std::time::Instant;
 
-use glium;
 use cgmath::{self, Zero};
 
 use std::{cmp, f32, io, fs};
 
+use glium::glutin;
 use glium::Surface;
 use glium::index::{PrimitiveType, NoIndices};
 use glium::glutin::dpi::PhysicalPosition;
@@ -74,14 +74,14 @@ impl RootWindow {
             .unwrap();
 
         RootWindow {
-            spr: spr,
+            spr,
             spr_atlas: SpriteAtlas::new(&display),
-            renderer: renderer,
+            renderer,
 
-            display: display,
-            program: program,
+            display,
+            program,
 
-            vertex_buffer: vertex_buffer,
+            vertex_buffer,
             vertex_buffer_len: 0,
 
             ortho_matrix: cgmath::Matrix4::zero(),
@@ -179,12 +179,12 @@ impl RootWindow {
         );
     }
 
-    pub fn run(mut self, event_loop: glium::glutin::event_loop::EventLoop<()>) {
+    pub fn run(mut self, event_loop: glutin::event_loop::EventLoop<()>) {
         event_loop.run(move |event, _, control_flow| {
-            use glium::glutin::event::Event;
-            use glium::glutin::event_loop::ControlFlow;
-            use glium::glutin::event::WindowEvent::*;
-            use glium::glutin::event::{MouseButton, MouseScrollDelta};
+            use glutin::event::Event;
+            use glutin::event_loop::ControlFlow;
+            use glutin::event::WindowEvent::*;
+            use glutin::event::{MouseButton, MouseScrollDelta};
 
             let next_frame_time = std::time::Instant::now() +
                 std::time::Duration::from_nanos(16_666_667);
@@ -218,7 +218,7 @@ impl RootWindow {
 
                     MouseInput { state, button: MouseButton::Middle, .. } |
                     MouseInput { state, button: MouseButton::Left, .. } => {
-                        use glium::glutin::event::ElementState::*;
+                        use glutin::event::ElementState::*;
 
                         match state {
                             Pressed => self.dragging = true,
@@ -255,8 +255,8 @@ impl RootWindow {
                     _ => (),
                 },
                 Event::NewEvents(cause) => match cause {
-                    glium::glutin::event::StartCause::ResumeTimeReached { .. } => (),
-                    glium::glutin::event::StartCause::Init => (),
+                    glutin::event::StartCause::ResumeTimeReached { .. } => (),
+                    glutin::event::StartCause::Init => (),
                     _ => return,
                 },
                 _ => return,

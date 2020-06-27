@@ -35,9 +35,9 @@ fn get_sprite_id(obj: &datcontainer::Thing,
 impl<V> Renderer<V> {
     pub fn new(dat: DatContainer, otb: itemtypes::Container, map: map::Map) -> Renderer<V> {
         Renderer {
-            dat: dat,
-            otb: otb,
-            map: map,
+            dat,
+            otb,
+            map,
 
             sector_cache: LruCache::new(512)
         }

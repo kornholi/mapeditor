@@ -1,17 +1,5 @@
-extern crate byteorder;
-extern crate cgmath;
-extern crate encoding;
 #[macro_use]
 extern crate glium;
-extern crate image;
-extern crate num_derive;
-extern crate num;
-extern crate toml;
-extern crate vec_map;
-extern crate lru_cache;
-
-#[macro_use]
-extern crate serde_derive;
 
 use std::time::Instant;
 
@@ -26,6 +14,8 @@ mod spritecontainer;
 
 use std::io::Read;
 use std::fs::File;
+
+use serde::Deserialize;
 
 use glium::glutin;
 

@@ -162,18 +162,18 @@ impl Thing {
         }
 
         Ok(Thing {
-            width: width,
-            height: height,
-            layers: layers,
+            width,
+            height,
+            layers,
 
-            pattern_width: pattern_width,
-            pattern_height: pattern_height,
-            pattern_depth: pattern_depth,
+            pattern_width,
+            pattern_height,
+            pattern_depth,
 
-            displacement: displacement,
-            elevation: elevation,
+            displacement,
+            elevation,
 
-            sprite_ids: sprite_ids,
+            sprite_ids,
         })
     }
 }
@@ -196,8 +196,8 @@ impl DatContainer {
         }
 
         Ok(DatContainer {
-            signature: signature,
-            items: items,
+            signature,
+            items,
         })
     }
 }

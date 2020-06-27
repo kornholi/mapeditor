@@ -52,8 +52,8 @@ impl Sector {
         }
 
         Sector {
-            origin: origin,
-            tiles: tiles,
+            origin,
+            tiles,
         }
     }
 

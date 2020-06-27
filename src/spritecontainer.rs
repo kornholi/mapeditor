@@ -27,9 +27,9 @@ impl<R> SpriteContainer<R>
 
         Ok(SpriteContainer {
             f: r,
-            signature: signature,
-            num_sprites: num_sprites,
-            offsets: offsets,
+            signature,
+            num_sprites,
+            offsets,
         })
     }
 

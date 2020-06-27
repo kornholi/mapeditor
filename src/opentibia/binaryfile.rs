@@ -42,9 +42,9 @@ impl Node {
         children.shrink_to_fit();
 
         Ok(Node {
-            kind: kind,
-            data: data,
-            children: children,
+            kind,
+            data,
+            children,
         })
     }
 }
