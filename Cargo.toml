@@ -14,7 +14,7 @@ cgmath = "0.17"
 clock_ticks = "0.1.1"
 encoding = "0.2"
 glium = "0.27"
-image = "0.23"
+image = { version = "0.23", default-features = false, features = ["png"] }
 num = "0.3"
 num-derive = "0.3"
 num-traits = "0.2"
