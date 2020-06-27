@@ -1,13 +1,13 @@
 use vec_map::VecMap;
 use std::io;
 use num::FromPrimitive;
+use num_derive::FromPrimitive;
 
 use helpers::ReadExt;
 
 use super::binaryfile;
 
-enum_from_primitive! {
-#[derive(Debug, PartialEq)]
+#[derive(Debug, FromPrimitive, PartialEq)]
 enum AttributeKind {
     ServerId = 0x10,
     ClientId,
@@ -41,7 +41,6 @@ enum AttributeKind {
     Writeable3, //deprecated
 
     WareId
-}
 }
 
 #[derive(Debug, Default)]

@@ -1,6 +1,7 @@
 use std::io;
 use helpers::ReadExt;
 
+use num_derive::FromPrimitive;
 use num::FromPrimitive;
 
 pub struct DatContainer {
@@ -10,18 +11,17 @@ pub struct DatContainer {
     pub items: Vec<Thing>,
 }
 
-enum_from_primitive! {
-#[derive(Debug, PartialEq)]
+#[derive(Debug, FromPrimitive, PartialEq)]
 pub enum Attribute {
     Ground = 0,
     GroundBorder,
     OnBottom,
     OnTop,
     Container,
-    Stackable, 
-    ForceUse,    
-    MultiUse,     
-    Writable,     
+    Stackable,
+    ForceUse,
+    MultiUse,
+    Writable,
     WritableOnce,
     FluidContainer = 10,
     Splash,
@@ -30,29 +30,28 @@ pub enum Attribute {
     BlockProjectile,
     NotPathable,
     NoMoveAnimation,
-    Pickupable,   
-    Hangable,    
-    HookSouth,      
-    HookEast = 20,     
+    Pickupable,
+    Hangable,
+    HookSouth,
+    HookEast = 20,
     Rotateable,
-    Light,    
+    Light,
     DontHide,
     Translucent,
-    Displacement,   
-    Elevation,  
+    Displacement,
+    Elevation,
     LyingCorpse,
-    AnimateAlways,  
-    MinimapColor, 
-    LensHelp = 30,  
+    AnimateAlways,
+    MinimapColor,
+    LensHelp = 30,
     FullGround,
-    LookThrough,    
-    Cloth,          
-    Market,         
-    DefaultAction,        
+    LookThrough,
+    Cloth,
+    Market,
+    DefaultAction,
 
     Usable = 0xFE,
     End = 0xFF
-}
 }
 
 #[derive(Debug)]

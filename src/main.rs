@@ -1,12 +1,11 @@
 extern crate byteorder;
 extern crate cgmath;
 extern crate clock_ticks;
-#[macro_use]
-extern crate enum_primitive;
 extern crate encoding;
 #[macro_use]
 extern crate glium;
 extern crate image;
+extern crate num_derive;
 extern crate num;
 extern crate toml;
 extern crate vec_map;

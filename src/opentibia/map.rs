@@ -1,13 +1,13 @@
 use std::io;
 use num::FromPrimitive;
+use num_derive::FromPrimitive;
 
 use helpers::ReadExt;
 
 use super::binaryfile;
 use super::Position;
 
-enum_from_primitive! {
-#[derive(Debug, PartialEq)]
+#[derive(Debug, FromPrimitive, PartialEq)]
 enum NodeKind {
     Root = 0,
     MapData = 2,
@@ -26,10 +26,8 @@ enum NodeKind {
     WayPoints = 15,
     WayPoint = 16
 }
-}
 
-enum_from_primitive! {
-#[derive(Debug, PartialEq)]
+#[derive(Debug, FromPrimitive, PartialEq)]
 enum NodeAttributeKind {
     MapDescription = 1,
     TileFlags = 3,
@@ -65,7 +63,6 @@ enum NodeAttributeKind {
     ItemShootRange = 33,
 
     AttributeMap = 128
-}
 }
 
 #[derive(Clone, Debug)]
